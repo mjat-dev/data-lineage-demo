@@ -1,0 +1,15 @@
+export const THEME = {
+  canvas: "#F5F5F5",
+  surface: "#FFFFFF",
+  textPrimary: "#070707",
+  textSecondary: "#6B7280",
+  textMuted: "#9CA3AF",
+  accentOrange: "#FFA800",
+  accentOrangeLight: "rgba(255,168,0,0.10)",
+  accentBlue: "#3474FE",
+  accentBlueLight: "rgba(52,116,254,0.08)",
+  btnPrimary: "#070707",
+  btnPrimaryHover: "#1A1A1A",
+  danger: "#EF4444",
+  success: "#22C55E",
+} as const;
