@@ -392,18 +392,18 @@ export default function DataLineage() {
                 <div className="bg-gray-50 rounded-2xl p-6 relative overflow-hidden">
                   <div className="absolute right-0 top-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" style={{ background: 'rgba(255,168,0,0.08)' }} />
                   <div className="relative z-10">
-                    <h4 className="text-lg font-bold text-[#070707] mb-2">Mint Verification Proof</h4>
-                    <p className="text-sm text-[#9CA3AF] mb-1">Optional · Permanent on-chain record</p>
-                    <p className="text-sm text-[#6B7280] mb-5 max-w-md">Anchor your submission to the blockchain to create a permanent, tamper-proof record of your contribution and mint your ownership tokens.</p>
+                    <h4 className="text-lg font-bold text-[#070707] mb-2">Anchor Your Contribution Data</h4>
+                    <p className="text-sm text-[#9CA3AF] mb-1">User data on-chain · Permanent record</p>
+                    <p className="text-sm text-[#6B7280] mb-5 max-w-md">Anchor your contribution to the blockchain to create a tamper-proof on-chain record of your data. This is required before your data can be included in the frontier dataset asset.</p>
 
                     <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6">
-                      <p className="text-[10px] font-bold uppercase text-[#9CA3AF] tracking-wider mb-3">Without anchoring, you have no on-chain rights</p>
+                      <p className="text-[10px] font-bold uppercase text-[#9CA3AF] tracking-wider mb-3">Without anchoring, your data cannot enter the asset pipeline</p>
                       <div className="space-y-2 text-xs text-[#6B7280]">
-                        {['No on-chain proof of contribution', 'No ERC-1155 ownership token', 'No share in future royalty distribution'].map(t => (
+                        {['No on-chain proof of contribution', 'Cannot be included in dataset bundle', 'No share in frontier dataset ownership'].map(t => (
                           <div key={t} className="flex items-center gap-2"><X className="w-3.5 h-3.5 text-[#EF4444]" />{t}</div>
                         ))}
                         <div className="border-t border-gray-100 pt-2 mt-2 space-y-1.5">
-                          {['Permanent on-chain ownership record', 'ERC-1155 token minted to your wallet', 'Eligible for royalty distribution'].map(t => (
+                          {['Permanent on-chain data provenance record', 'Eligible for dataset assetification (Step 04)', 'Eligible for ownership share distribution'].map(t => (
                             <div key={t} className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E]" /><span className="text-[#070707]">{t}</span></div>
                           ))}
                         </div>
@@ -411,7 +411,7 @@ export default function DataLineage() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 mb-8 text-sm">
-                      {['Verifiable History', 'Immutable Record', 'Enable Ownership', 'Traceability'].map(f => (
+                      {['Verifiable History', 'Immutable Record', 'Data Provenance', 'Traceability'].map(f => (
                         <div key={f} className="flex items-center gap-2 text-[#6B7280]">
                           <CheckCircle2 className="w-3.5 h-3.5 text-[#FFA800]" />{f}
                         </div>
@@ -472,45 +472,36 @@ export default function DataLineage() {
           <NodeWrapper icon={Package} iconActive={anchored}>
             <CollapsibleCard
               title="Assetification"
-              badge={anchored ? 'Ownership Established · On-chain' : 'Dataset Assembled'}
+              badge={anchored ? 'Dataset Asset On-chain · v1.0.2' : 'Pending Anchor'}
               badgeVariant={anchored ? 'orange' : 'gray'}
               timestamp="2025-11-22 10:00"
             >
               {!anchored ? (
                 <div className="space-y-5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm text-[#070707]">Asset Assembled:</p>
-                    <AssetChip name="Food-Science-Asset-42" assetId="asset_882_v1" />
-                    <p className="text-sm text-[#9CA3AF]">included in</p>
-                    <a href="https://huggingface.co/datasets/Codatta/MM-Food-100K" target="_blank" rel="noopener noreferrer"
-                      className="px-3 py-1 rounded-xl border border-gray-200 bg-white text-[#070707] text-xs font-bold hover:border-[#FFA800]/40 hover:text-[#FFA800] transition-colors inline-flex items-center gap-1">
-                      Codatta/MM-Food-100K <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
+                  <p className="text-sm text-[#6B7280] leading-relaxed">
+                    After your data is anchored on-chain, it will be bundled into the frontier dataset asset. The dataset is uploaded to HuggingFace and a version number is recorded back on-chain.
+                  </p>
 
                   <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                    <p className="text-[10px] font-bold uppercase text-[#9CA3AF] tracking-wider mb-3">Estimated Ownership Share (after anchoring)</p>
-                    <div className="space-y-2 text-xs">
+                    <p className="text-[10px] font-bold uppercase text-[#9CA3AF] tracking-wider mb-3">Assetification Pipeline (unlocks after Step 03)</p>
+                    <div className="space-y-3 text-xs text-[#6B7280]">
                       {[
-                        { name: 'You (Contributor)', pct: '65%', color: '#FFA800', highlight: true },
-                        { name: 'Protocol Validator', pct: '25%', color: '#3474FE', highlight: false },
-                        { name: 'Protocol Treasury', pct: '10%', color: '#9CA3AF', highlight: false },
-                      ].map(u => (
-                        <div key={u.name} className="flex items-center justify-between py-1.5">
-                          <div className="flex items-center gap-2">
-                            {u.highlight ? <X className="w-3 h-3 text-[#EF4444]" /> : <div className="w-1.5 h-1.5 rounded-full" style={{ background: u.color }} />}
-                            <span className={u.highlight ? 'font-bold text-[#EF4444]' : 'text-[#6B7280]'}>{u.name}</span>
-                          </div>
-                          <span className="font-bold text-[#070707]">{u.highlight ? 'Not on chain' : u.pct}</span>
+                        { step: '①', label: 'Bundle frontier dataset on-chain', done: false },
+                        { step: '②', label: 'Upload dataset to HuggingFace', done: false },
+                        { step: '③', label: 'Record HuggingFace version hash on-chain', done: false },
+                      ].map(({ step, label, done }) => (
+                        <div key={step} className="flex items-center gap-2.5">
+                          <span className="text-[11px] font-bold text-[#9CA3AF] shrink-0 w-4">{step}</span>
+                          <span className={done ? 'text-[#22C55E] line-through' : 'text-[#9CA3AF]'}>{label}</span>
                         </div>
                       ))}
                     </div>
-                    <p className="text-[10px] text-[#9CA3AF] mt-3 italic">Anchor on-chain to claim your 65% share.</p>
+                    <p className="text-[10px] text-[#9CA3AF] mt-3 italic">Complete Step 03 to trigger assetification.</p>
                   </div>
 
                   <div className="flex items-center gap-3 p-4 rounded-xl bg-[rgba(255,168,0,0.06)] border border-[rgba(255,168,0,0.15)]">
                     <AlertTriangle className="w-5 h-5 text-[#FFA800] shrink-0" />
-                    <p className="flex-1 text-sm text-[#6B7280]">Your contribution is included in this asset, but you have no ownership until you anchor on-chain.</p>
+                    <p className="flex-1 text-sm text-[#6B7280]">Your data must be anchored on-chain before it can enter the dataset asset pipeline.</p>
                     <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                       className="shrink-0 px-4 py-2 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-xs font-bold transition-colors">
                       Anchor On-Chain →
@@ -518,31 +509,50 @@ export default function DataLineage() {
                   </div>
                 </div>
               ) : (
-                <>
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <p className="text-sm text-[#070707]">Asset Assembled:</p>
+                <div className="space-y-4">
+                  {/* Asset chip + HuggingFace link */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm text-[#070707]">Dataset Asset:</p>
                     <AssetChip name="Food-Science-Asset-42" assetId="asset_882_v1" />
-                    <p className="text-sm text-[#9CA3AF]">included in</p>
+                    <p className="text-sm text-[#9CA3AF]">published to</p>
                     <a href="https://huggingface.co/datasets/Codatta/MM-Food-100K" target="_blank" rel="noopener noreferrer"
                       className="px-3 py-1 rounded-xl border border-gray-200 bg-white text-[#070707] text-xs font-bold hover:border-[#FFA800]/40 hover:text-[#FFA800] transition-colors inline-flex items-center gap-1">
                       Codatta/MM-Food-100K <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>
-                  <div className="bg-gray-50 border border-[rgba(34,197,94,0.15)] rounded-xl p-4 space-y-2 text-xs mb-3">
-                    {[
-                      { label: 'Mint Tx Hash', value: '0xd94e...7f3a', link: 'https://etherscan.io/tx/0xd94e' },
-                      { label: 'Token', value: 'ERC-1155 · #882', link: null },
-                      { label: 'Your Tokens', value: '35 / 100  (35%)', link: null },
-                    ].map(({ label, value, link }) => (
-                      <div key={label} className="flex justify-between">
-                        <span className="text-[#9CA3AF]">{label}</span>
-                        {link ? <a href={link} target="_blank" rel="noopener noreferrer" className="font-mono text-[#FFA800] hover:underline flex items-center gap-1">{value} <ExternalLink className="w-3 h-3" /></a>
-                          : <span className="font-mono text-[#6B7280]">{value}</span>}
-                      </div>
-                    ))}
+
+                  {/* Pipeline steps — all completed */}
+                  <div className="bg-gray-50 border border-[rgba(34,197,94,0.15)] rounded-xl p-4">
+                    <p className="text-[10px] font-bold uppercase text-[#9CA3AF] tracking-wider mb-3">Assetification Pipeline · Completed</p>
+                    <div className="space-y-3 text-xs mb-4">
+                      {[
+                        { step: '①', label: 'Frontier dataset bundled on-chain', tx: '0xd94e...7f3a', link: 'https://etherscan.io/tx/0xd94e' },
+                        { step: '②', label: 'Dataset uploaded to HuggingFace', tx: 'v1.0.2 · MM-Food-100K', link: 'https://huggingface.co/datasets/Codatta/MM-Food-100K' },
+                        { step: '③', label: 'Version hash recorded on-chain', tx: '0x8b2c...f41a', link: 'https://etherscan.io/tx/0x8b2c' },
+                      ].map(({ step, label, tx, link }) => (
+                        <div key={step} className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E] shrink-0" />
+                            <span className="text-[#070707]">{step} {label}</span>
+                          </div>
+                          <a href={link} target="_blank" rel="noopener noreferrer"
+                            className="font-mono text-[#FFA800] hover:underline flex items-center gap-1 shrink-0 text-[10px]">
+                            {tx} <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="border-t border-gray-100 pt-3 flex items-center justify-between text-xs">
+                      <span className="text-[#9CA3AF]">HuggingFace Version</span>
+                      <span className="font-bold text-[#070707] font-mono">v1.0.2</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs mt-2">
+                      <span className="text-[#9CA3AF]">On-chain Version Hash</span>
+                      <span className="font-mono text-[#6B7280]">0x8b2c...f41a</span>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-[#9CA3AF] italic">Hover the asset chip to view composition logic and ownership summary.</p>
-                </>
+                  <p className="text-[11px] text-[#9CA3AF] italic">Hover the asset chip to view dataset composition and ownership summary.</p>
+                </div>
               )}
             </CollapsibleCard>
           </NodeWrapper>
@@ -552,10 +562,10 @@ export default function DataLineage() {
             <div className="space-y-4">
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Step 05</span>
-                <h3 className="text-xl font-bold text-[#070707]">Publication &amp; Circulation</h3>
+                <h3 className="text-xl font-bold text-[#070707]">Publish</h3>
               </div>
               <p className="text-sm text-[#6B7280] mb-4">
-                {anchored ? 'Ownership tokens minted. Shares can be transferred via ERC-1155 protocol.' : 'On-chain transfer events for this dataset. Anchor your data to claim your share.'}
+                {anchored ? 'Dataset asset published on-chain. Ownership shares can be transferred via ERC-1155 protocol.' : 'Dataset will be published after assetification is complete. Anchor your data to participate.'}
               </p>
 
               {/* Marketplace Entry */}
