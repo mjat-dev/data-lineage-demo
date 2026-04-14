@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FileText, CheckCircle2, Link2, Package, Globe,
-  User, ChevronDown, Plus, GripHorizontal, Sparkles,
+  User, ChevronDown, Plus, Sparkles,
   Store, History, PieChart, ArrowRight, ExternalLink,
   X, AlertTriangle, Info, Copy, GitBranch,
 } from 'lucide-react';
@@ -74,7 +74,7 @@ function AssetChip({ name, assetId }: { name: string; assetId: string }) {
           <span className="text-[8px] font-bold bg-gray-100 px-2 py-0.5 rounded text-[#9CA3AF] shrink-0 ml-2">VALIDATED</span>
         </div>
       </div>
-      <div className="flex justify-center text-gray-300 my-1"><GripHorizontal className="w-4 h-4" /></div>
+      <div className="flex justify-center text-gray-300 my-1"><span className="text-sm font-bold">=</span></div>
       <div className="bg-[rgba(255,168,0,0.06)] rounded-xl p-3 border border-[rgba(255,168,0,0.15)] mb-4">
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 rounded-lg bg-[rgba(255,168,0,0.10)] flex items-center justify-center shrink-0">
@@ -121,8 +121,8 @@ function NodeWrapper({ icon: Icon, iconActive = false, children, connector = tru
   return (
     <div className="mb-14 relative pl-16">
       {connector && <div className="timeline-connector absolute left-[23px] top-10 bottom-0 w-[2px]" />}
-      <div className={`absolute left-0 top-0 w-10 h-10 rounded-full bg-white flex items-center justify-center z-10 transition-shadow ${iconActive ? 'shadow-[0_0_0_2px_rgba(255,168,0,0.30)] shadow-[0_2px_8px_rgba(255,168,0,0.15)]' : 'shadow-[0_1px_3px_rgba(0,0,0,0.06)]'}`}>
-        <Icon className={`w-5 h-5 ${iconActive ? 'text-[#FFA800]' : 'text-gray-300'}`} />
+      <div className={`absolute left-0 top-0 w-10 h-10 rounded-full bg-white flex items-center justify-center z-10 transition-shadow ${iconActive ? 'shadow-[0_0_0_2px_rgba(7,7,7,0.12)] shadow-[0_2px_8px_rgba(0,0,0,0.08)]' : 'shadow-[0_1px_3px_rgba(0,0,0,0.06)]'}`}>
+        <Icon className={`w-5 h-5 ${iconActive ? 'text-[#070707]' : 'text-gray-300'}`} />
       </div>
       {children}
     </div>
@@ -135,7 +135,7 @@ function CollapsibleCard({ title, badge, badgeVariant, timestamp, defaultOpen = 
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <Card className="p-0 overflow-hidden transition-shadow hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
+    <Card className="p-0 transition-shadow hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
       <button onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors rounded-2xl text-left">
         <div className="flex flex-col items-start gap-2">
           <h3 className="text-xl font-bold text-[#070707]">{title}</h3>
@@ -252,6 +252,8 @@ export default function DataLineage() {
   const [showAnchorModal, setShowAnchorModal] = useState(false);
   const [showAnchorDetails, setShowAnchorDetails] = useState(false);
   const [showMetadata, setShowMetadata] = useState(false);
+  const [showClaimModal, setShowClaimModal] = useState(false);
+  const [claimed, setClaimed] = useState(false);
   const [circulationOpen, setCirculationOpen] = useState(true);
   const [ownershipOpen, setOwnershipOpen] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
@@ -286,7 +288,7 @@ export default function DataLineage() {
         <header className="mb-12">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-2">
-              <p className="text-[#FFA800] text-[10px] font-bold uppercase tracking-[0.2em]">Architecture / Flow</p>
+              <p className="text-[#9CA3AF] text-[10px] font-bold uppercase tracking-[0.2em]">Architecture / Flow</p>
               <h1 className="text-4xl font-bold tracking-tight text-[#070707]">Data Lineage</h1>
               <p className="text-[#6B7280] text-sm">Contribution details and ownership flow tracking.</p>
             </div>
@@ -549,7 +551,7 @@ export default function DataLineage() {
           <NodeWrapper icon={Globe} iconActive={anchored} connector={false}>
             <div className="space-y-4">
               <div className="flex items-center gap-3 mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#FFA800]">Step 05</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Step 05</span>
                 <h3 className="text-xl font-bold text-[#070707]">Publication &amp; Circulation</h3>
               </div>
               <p className="text-sm text-[#6B7280] mb-4">
@@ -591,31 +593,41 @@ export default function DataLineage() {
                     <div className="space-y-8 relative pl-6 border-l border-gray-200">
                       {[
                         ...(anchored ? [
-                          { time: '2025-11-25 11:30', type: 'Mint', title: 'ERC-1155 tokens minted to You', desc: 'Your 65 ownership tokens minted on-chain after anchoring.', from: null, to: '@chef_kenshiro (You)', share: '65 tokens', tx: '0xd94e...7f3a', highlight: true },
-                          { time: '2025-11-26 09:00', type: 'Mint', title: 'Validator share minted', desc: 'Protocol validator share minted. 25 tokens.', from: null, to: 'Protocol Validator', share: '25 tokens', tx: '0x3d82...a01c', highlight: false },
-                          { time: '2025-11-26 09:00', type: 'Mint', title: 'Treasury share minted', desc: 'Protocol treasury share. 10 tokens.', from: null, to: 'Protocol Treasury', share: '10 tokens', tx: '0x3d82...a01c', highlight: false },
+                          { id: 'you-mint', time: '2025-11-25 11:30', type: 'Mint', title: 'ERC-1155 tokens minted to You', desc: claimed ? 'Your 65 ownership tokens claimed and minted to your wallet.' : 'Your 65 ownership tokens are ready to claim.', from: null, to: '@chef_kenshiro (You)', share: '65 tokens', tx: claimed ? '0xd94e...7f3a' : null, highlight: true, claimable: !claimed },
+                          { id: 'val-mint', time: '2025-11-26 09:00', type: 'Mint', title: 'Validator share minted', desc: 'Protocol validator share minted. 25 tokens.', from: null, to: 'Protocol Validator', share: '25 tokens', tx: '0x3d82...a01c', highlight: false, claimable: false },
+                          { id: 'treasury-mint', time: '2025-11-26 09:00', type: 'Mint', title: 'Treasury share minted', desc: 'Protocol treasury share. 10 tokens.', from: null, to: 'Protocol Treasury', share: '10 tokens', tx: '0x3d82...a01c', highlight: false, claimable: false },
+                          { id: 'backer-a', time: '2025-11-27 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@alpha_backer', to: 'Backer A', share: '10 tokens', tx: '0xa13f...92bd', highlight: false, claimable: false },
+                          { id: 'backer-b', time: '2025-11-28 09:42', type: 'Transfer', title: 'Backer B purchased 5 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@alpha_backer', to: 'Backer B', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false, claimable: false },
                         ] : [
-                          { time: '2025-11-22 10:00', type: 'Mint', title: 'Validator share minted', desc: 'Protocol validator share minted on-chain.', from: null, to: 'Protocol Validator', share: '25 tokens', tx: '0x3d82...a01c', highlight: false },
-                          { time: '2025-11-22 10:00', type: 'Mint', title: 'Treasury share minted', desc: 'Protocol treasury share minted.', from: null, to: 'Protocol Treasury', share: '10 tokens', tx: '0x3d82...a01c', highlight: false },
-                          { time: '2025-11-23 14:15', type: 'Transfer', title: 'Backer A purchased 10% share', desc: 'ERC-1155 direct transfer via wallet. You cannot trade your share until you anchor on-chain.', from: '@other_contributor', to: 'Backer A', share: '10 tokens', tx: '0xa13f...92bd', highlight: false },
-                          { time: '2025-11-24 09:42', type: 'Transfer', title: 'Backer B purchased 5% share', desc: 'ERC-1155 direct transfer via wallet.', from: '@other_contributor', to: 'Backer B', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false },
+                          { id: 'val-mint-pre', time: '2025-11-22 10:00', type: 'Mint', title: 'Validator share minted', desc: 'Protocol validator share minted on-chain.', from: null, to: 'Protocol Validator', share: '25 tokens', tx: '0x3d82...a01c', highlight: false, claimable: false },
+                          { id: 'treasury-mint-pre', time: '2025-11-22 10:00', type: 'Mint', title: 'Treasury share minted', desc: 'Protocol treasury share minted.', from: null, to: 'Protocol Treasury', share: '10 tokens', tx: '0x3d82...a01c', highlight: false, claimable: false },
+                          { id: 'backer-a-pre', time: '2025-11-23 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 direct transfer via wallet. You cannot trade your share until you anchor on-chain.', from: '@other_contributor', to: 'Backer A', share: '10 tokens', tx: '0xa13f...92bd', highlight: false, claimable: false },
+                          { id: 'backer-b-pre', time: '2025-11-24 09:42', type: 'Transfer', title: 'Backer B purchased 5 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@other_contributor', to: 'Backer B', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false, claimable: false },
                         ]),
-                      ].map((evt, i) => (
-                        <div key={i} className="relative">
-                          <div className={`absolute -left-[30px] top-1 w-4 h-4 rounded-full border-2 ${evt.highlight ? 'bg-[#FFA800] border-[#FFA800]' : 'bg-white border-[#FFA800]/40'}`} />
+                      ].map((evt) => (
+                        <div key={evt.id} className="relative">
+                          <div className={`absolute -left-[30px] top-1 w-4 h-4 rounded-full border-2 ${evt.highlight ? (claimed ? 'bg-[#22C55E] border-[#22C55E]' : 'bg-[#FFA800] border-[#FFA800] animate-pulse') : 'bg-white border-gray-300'}`} />
                           <div className="space-y-2">
                             <div className="flex items-center gap-2 text-[11px]">
                               <span className="font-mono text-[#9CA3AF]">{evt.time}</span>
-                              <Badge variant="orange">{evt.type}</Badge>
+                              <Badge variant={evt.type === 'Transfer' ? 'blue' : 'orange'}>{evt.type}</Badge>
+                              {evt.claimable && <Badge variant="orange">Pending Claim</Badge>}
+                              {evt.highlight && claimed && <Badge variant="green">Claimed</Badge>}
                             </div>
                             <p className="text-sm font-bold text-[#070707]">{evt.title}</p>
                             <p className="text-xs text-[#9CA3AF]">{evt.desc}</p>
                             <div className={`p-3 rounded-xl border text-[11px] grid grid-cols-2 md:grid-cols-4 gap-3 ${evt.highlight ? 'bg-[rgba(255,168,0,0.06)] border-[rgba(255,168,0,0.15)]' : 'bg-gray-50 border-gray-100'}`}>
-                              {evt.from && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">From</span><span className="font-bold text-[#FFA800] truncate block">{evt.from}</span></div>}
-                              <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">To</span><span className="font-bold text-[#FFA800] truncate block">{evt.to}</span></div>
+                              {evt.from && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">From</span><span className="font-bold text-[#6B7280] truncate block">{evt.from}</span></div>}
+                              <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">To</span><span className="font-bold text-[#6B7280] truncate block">{evt.to}</span></div>
                               <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Share</span><span className="font-bold text-[#070707]">{evt.share}</span></div>
-                              {evt.tx && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Tx Hash</span><a href={`https://etherscan.io/tx/${evt.tx}`} target="_blank" rel="noopener noreferrer" className="text-[#FFA800] hover:underline flex items-center gap-1">{evt.tx} <ExternalLink className="w-3 h-3" /></a></div>}
+                              {evt.tx && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Tx Hash</span><a href={`https://etherscan.io/tx/${evt.tx}`} target="_blank" rel="noopener noreferrer" className="text-[#3474FE] hover:underline flex items-center gap-1">{evt.tx} <ExternalLink className="w-3 h-3" /></a></div>}
                             </div>
+                            {evt.claimable && (
+                              <button onClick={() => setShowClaimModal(true)}
+                                className="mt-2 px-5 py-2.5 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-xs font-bold transition-colors">
+                                Claim Tokens →
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -683,6 +695,33 @@ export default function DataLineage() {
 
       {showAnchorModal && <AnchorModal onClose={() => setShowAnchorModal(false)} onSuccess={() => setAnchored(true)} />}
       {showMetadata && <MetadataDrawer onClose={() => setShowMetadata(false)} />}
+
+      {/* Claim Modal */}
+      {showClaimModal && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/30 backdrop-blur-sm p-4"
+          onClick={() => setShowClaimModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-[0_8px_32px_rgba(0,0,0,0.12)]" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+              <h3 className="text-base font-bold text-[#070707]">Claim Your Tokens</h3>
+              <button onClick={() => setShowClaimModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                <X className="w-4 h-4 text-[#6B7280]" />
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <p className="text-sm text-[#6B7280]">Claim your ERC-1155 ownership tokens to your wallet. This is an on-chain transaction.</p>
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2 text-xs">
+                <div className="flex justify-between"><span className="text-[#9CA3AF]">Tokens</span><span className="font-bold text-[#070707]">65 ERC-1155</span></div>
+                <div className="flex justify-between"><span className="text-[#9CA3AF]">To</span><span className="font-mono text-[#070707]">{walletAddr}</span></div>
+                <div className="flex justify-between"><span className="text-[#9CA3AF]">Network Fee</span><span className="font-mono text-[#6B7280]">~0.0001 ETH</span></div>
+              </div>
+              <button onClick={() => { setClaimed(true); setShowClaimModal(false); }}
+                className="w-full py-3 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-sm font-bold transition-colors">
+                Confirm Claim
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Anchor Details Modal */}
       {showAnchorDetails && (

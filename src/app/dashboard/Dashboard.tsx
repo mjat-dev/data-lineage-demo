@@ -41,7 +41,7 @@ export default function Dashboard() {
 
         {/* Header */}
         <header className="mb-12">
-          <p className="text-[#FFA800] text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Overview</p>
+          <p className="text-[#9CA3AF] text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Overview</p>
           <h1 className="text-4xl font-bold tracking-tight mb-2 text-[#070707]">My Contributions</h1>
           <p className="text-[#6B7280] text-sm">Track your data submissions, validation status, and on-chain anchoring.</p>
         </header>
