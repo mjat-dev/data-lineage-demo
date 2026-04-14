@@ -308,7 +308,7 @@ function _CirculationLog() {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function DataLineage() {
-  const { submission, anchored, setAnchored, walletAddress } = useApp();
+  const { submission, anchored, setAnchored, walletAddress, isLoggedIn } = useApp();
   const [showAnchorModal, setShowAnchorModal] = useState(false);
   const [showAnchorDetails, setShowAnchorDetails] = useState(false);
   const [showMetadata, setShowMetadata] = useState(false);
@@ -385,11 +385,26 @@ export default function DataLineage() {
             <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-5">
               <GitBranch className="w-7 h-7 text-gray-300" />
             </div>
-            <h2 className="text-xl font-bold text-[#070707] mb-2">No submission on record</h2>
-            <p className="text-sm text-[#9CA3AF] max-w-xs leading-relaxed">Submit a data contribution on the Frontier page to start tracking its provenance here.</p>
-            <Link to="/" className="mt-6 inline-block px-5 py-2.5 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-sm font-bold transition-colors">
-              Go to Frontier
-            </Link>
+            <h2 className="text-xl font-bold text-[#070707] mb-2">No submission selected</h2>
+            {isLoggedIn ? (
+              <>
+                <p className="text-sm text-[#9CA3AF] max-w-xs leading-relaxed">
+                  Go to Data Profile, select a submission, and click it to view its lineage here.
+                </p>
+                <Link to="/profile" className="mt-6 inline-block px-5 py-2.5 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-sm font-bold transition-colors">
+                  View My Submissions →
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-[#9CA3AF] max-w-xs leading-relaxed">
+                  Submit a data contribution on the Frontier page to start tracking its provenance here.
+                </p>
+                <Link to="/" className="mt-6 inline-block px-5 py-2.5 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-sm font-bold transition-colors">
+                  Go to Frontier
+                </Link>
+              </>
+            )}
           </div>
         )}
 
