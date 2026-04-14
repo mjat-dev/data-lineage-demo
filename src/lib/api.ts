@@ -229,17 +229,19 @@ export async function submitTask(params: {
 export async function uploadFile(file: File): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('content_type', file.type);
 
   const token = getToken();
-  const res = await fetch(`${BASE_URL}/api/v2/file/upload`, {
+  const headers: Record<string, string> = {};
+  if (token) headers['token'] = token;
+
+  const res = await fetch(`${BASE_URL}/api/file/upload?content_type=${encodeURIComponent(file.type)}`, {
     method: 'POST',
-    headers: token ? { token } : {},
+    headers,
     body: formData,
   });
   const json = await res.json();
   if (!json.success) throw new Error(json.errorMessage || 'Upload failed');
-  return json.data.file_path as string;
+  return json.file_path as string;
 }
 
 // ── Chain Submit ─────────────────────────────────────────────────────────────

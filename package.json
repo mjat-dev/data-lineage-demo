@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.1.1",
+    "antd": "^6.3.5",
     "codatta-connect": "^2.8.2",
     "ethers": "^6.16.0",
     "lucide-react": "^1.7.0",

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, CloudUpload, Image, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CloudUpload, X, CheckCircle2, AlertCircle, Eye, Trash2 } from 'lucide-react';
+import { Input, Button as AntButton, ConfigProvider, Spin, message } from 'antd';
 import { useApp } from '@/context/AppContext';
 import { Card } from '@/components/ui/Card';
 import { uploadFile, submitTask } from '@/lib/api';
@@ -11,6 +12,8 @@ export default function TaskPage() {
   const { walletAddress, isLoggedIn, setSubmission } = useApp();
 
   const [foodImage, setFoodImage] = useState<File | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [foodName, setFoodName] = useState('');
   const [foodWeight, setFoodWeight] = useState('');
   const [cookingMethod, setCookingMethod] = useState('');
@@ -19,6 +22,30 @@ export default function TaskPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const previewUrl = useMemo(() => foodImage ? URL.createObjectURL(foodImage) : null, [foodImage]);
+
+  // Upload image immediately on selection
+  const handleImageSelect = useCallback(async (file: File) => {
+    setFoodImage(file);
+    setUploadedImageUrl(null);
+    setImageUploading(true);
+    try {
+      const url = await uploadFile(file);
+      setUploadedImageUrl(url);
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Image upload failed');
+      setFoodImage(null);
+    } finally {
+      setImageUploading(false);
+    }
+  }, []);
+
+  const handleRemoveImage = useCallback(() => {
+    setFoodImage(null);
+    setUploadedImageUrl(null);
+  }, []);
 
   // IDs stored by Frontier page when user clicks a frontier card
   const taskId = sessionStorage.getItem('codatta_task_id') || '10318807159400100038';
@@ -27,19 +54,16 @@ export default function TaskPage() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); setDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file) setFoodImage(file);
+    if (file) handleImageSelect(file);
   };
 
-  const formFilled = !!(foodImage && foodName.trim() && foodWeight.trim() && cookingMethod.trim() && calories.trim());
+  const formFilled = !!(uploadedImageUrl && foodName.trim() && foodWeight.trim() && cookingMethod.trim() && calories.trim());
 
   const doSubmit = async () => {
+    if (!uploadedImageUrl) return;
     setSubmitting(true);
     setError(null);
     try {
-      // 1. Upload image
-      const imageUrl = await uploadFile(foodImage!);
-
-      // 2. Submit task data
       const result = await submitTask({
         taskId,
         templateId,
@@ -48,11 +72,10 @@ export default function TaskPage() {
           food_weight: foodWeight.trim(),
           cooking_method: cookingMethod.trim(),
           calories: calories.trim(),
-          food_image: imageUrl,
+          food_image: uploadedImageUrl,
         },
       });
 
-      // 3. Save to context for Dashboard display
       setSubmission({
         id: result.submission_id,
         foodName: foodName.trim(),
@@ -60,7 +83,7 @@ export default function TaskPage() {
         cookingMethod: cookingMethod.trim(),
         calories: calories.trim(),
         foodImageName: foodImage!.name,
-        foodImageUrl: imageUrl,
+        foodImageUrl: uploadedImageUrl,
         submittedAt: new Date().toISOString(),
         taskId,
         templateId,
@@ -84,10 +107,10 @@ export default function TaskPage() {
     doSubmit();
   };
 
-  const inputClass = "w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#FFA800] focus:ring-2 focus:ring-[#FFA800]/10 placeholder:text-gray-300 transition-all";
   const labelClass = "text-[10px] font-bold uppercase tracking-wider text-[#9CA3AF] block mb-2";
 
   return (
+    <ConfigProvider theme={{ token: { colorPrimary: '#070707', borderRadius: 10, fontSize: 14 } }}>
     <main className="pt-24 pb-20 bg-[#F5F5F5]">
       <div className="max-w-3xl mx-auto px-8">
 
@@ -154,13 +177,22 @@ export default function TaskPage() {
                 dragging ? 'border-[#FFA800] bg-[rgba(255,168,0,0.04)]' : 'border-gray-200 hover:border-[#FFA800]/40'
               }`}
             >
-              {foodImage ? (
-                <div className="flex items-center gap-3">
-                  <Image className="w-5 h-5 text-[#FFA800]" />
-                  <span className="text-sm text-[#070707]">{foodImage.name}</span>
-                  <button type="button" onClick={() => setFoodImage(null)} className="ml-2 text-gray-400 hover:text-gray-600">
-                    <X className="w-4 h-4" />
-                  </button>
+              {foodImage && previewUrl ? (
+                <div className="flex flex-col items-center gap-2">
+                  <Spin spinning={imageUploading}>
+                    <div className="relative group w-32 h-32 rounded-xl overflow-hidden border border-gray-200">
+                      <img src={uploadedImageUrl || previewUrl} alt={foodImage.name} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100">
+                        <button type="button" onClick={() => setShowPreview(true)} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-black/60 transition-all">
+                          <Eye className="w-4 h-4" style={{ color: '#fff' }} />
+                        </button>
+                        <button type="button" onClick={handleRemoveImage} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-red-500/80 hover:border-red-400/40 transition-all">
+                          <Trash2 className="w-4 h-4" style={{ color: '#fff' }} />
+                        </button>
+                      </div>
+                      <p className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] px-2 py-1 truncate">{foodImage.name}</p>
+                    </div>
+                  </Spin>
                 </div>
               ) : (
                 <>
@@ -171,7 +203,7 @@ export default function TaskPage() {
                   </div>
                   <label className="bg-[#070707] hover:bg-[#1A1A1A] text-white text-xs font-bold px-5 py-2 rounded-xl cursor-pointer transition-colors">
                     Browse Files
-                    <input type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) setFoodImage(e.target.files[0]); }} />
+                    <input type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) handleImageSelect(e.target.files[0]); }} />
                   </label>
                 </>
               )}
@@ -186,7 +218,13 @@ export default function TaskPage() {
           ].map(({ label, value, setter, placeholder }) => (
             <div key={label}>
               <label className={labelClass}>{label} <span className="text-[#FFA800]">*</span></label>
-              <input type="text" value={value} onChange={e => setter(e.target.value)} placeholder={placeholder} className={inputClass} />
+              <Input
+                value={value}
+                onChange={e => setter(e.target.value)}
+                placeholder={placeholder}
+                size="large"
+                allowClear
+              />
             </div>
           ))}
 
@@ -220,26 +258,36 @@ export default function TaskPage() {
           )}
 
           {/* Submit */}
-          <button
-            type="submit"
+          <AntButton
+            htmlType="submit"
+            type="primary"
+            size="large"
+            block
+            loading={submitting}
             disabled={submitting}
-            className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all ${
-              !submitting
-                ? 'bg-[#070707] hover:bg-[#1A1A1A] text-white cursor-pointer'
-                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-            }`}
+            style={{ height: 48, borderRadius: 12, fontWeight: 700 }}
           >
-            {submitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Uploading &amp; Submitting…
-              </span>
-            ) : !isLoggedIn ? 'Connect Wallet & Submit' : 'Submit'}
-          </button>
+            {submitting ? 'Submitting…' : !isLoggedIn ? 'Connect Wallet & Submit' : 'Submit'}
+          </AntButton>
         </form>
       </div>
 
       {showWalletModal && <WalletModal onClose={() => setShowWalletModal(false)} />}
+
+      {/* Image preview modal */}
+      {showPreview && previewUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setShowPreview(false)}
+        >
+          <button onClick={() => setShowPreview(false)} className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+          <img src={previewUrl} alt={foodImage?.name} className="max-w-full max-h-[85vh] rounded-xl object-contain" onClick={e => e.stopPropagation()} />
+        </div>
+      )}
     </main>
+    </ConfigProvider>
   );
 }
