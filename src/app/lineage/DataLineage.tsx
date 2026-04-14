@@ -661,8 +661,8 @@ export default function DataLineage() {
                       <div className="space-y-8 relative pl-6 border-l border-gray-200">
                         {[
                           { id: 'you-mint', time: '2025-11-25 11:30', type: 'Mint', title: 'ERC-1155 tokens minted to You', desc: 'Your 65 ownership tokens minted to your wallet.', from: null, to: '@chef_kenshiro (You)', share: '65 tokens', tx: '0xd94e...7f3a', highlight: true },
-                          { id: 'backer-a', time: '2025-11-27 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@alpha_backer', to: 'Backer A', share: '10 tokens', tx: '0xa13f...92bd', highlight: false },
-                          { id: 'backer-b', time: '2025-11-28 09:42', type: 'Transfer', title: 'Backer B purchased 5 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@alpha_backer', to: 'Backer B', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false },
+                          { id: 'backer-a', time: '2025-11-27 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 token transfer · contributor → backer', from: '@chef_kenshiro · did:codatta:sub_882…9b4c', to: '0x8fa2...bc31', share: '10 tokens', tx: '0xa13f...92bd', highlight: false },
+                          { id: 'backer-b', time: '2025-11-28 09:42', type: 'Transfer', title: 'Backer B purchased 5 tokens', desc: 'ERC-1155 token transfer · contributor → backer', from: '@chef_kenshiro · did:codatta:sub_882…9b4c', to: '0x3dc9...f772', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false },
                         ].map((evt) => (
                           <div key={evt.id} className="relative">
                             <div className={`absolute -left-[30px] top-1 w-4 h-4 rounded-full border-2 ${evt.highlight ? 'bg-[#FDA829] border-[#FDA829]' : 'bg-white border-gray-300'}`} />
