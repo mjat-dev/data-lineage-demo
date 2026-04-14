@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, CloudUpload, X, CheckCircle2, AlertCircle, Eye, Trash2 } from 'lucide-react';
-import { Input, Button as AntButton, ConfigProvider, Spin, message } from 'antd';
 import { useApp } from '@/context/AppContext';
 import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Loader2 } from 'lucide-react';
 import { uploadFile, submitTask } from '@/lib/api';
 import WalletModal from '@/components/WalletModal';
 
@@ -35,7 +36,7 @@ export default function TaskPage() {
       const url = await uploadFile(file);
       setUploadedImageUrl(url);
     } catch (err) {
-      message.error(err instanceof Error ? err.message : 'Image upload failed');
+      setError(err instanceof Error ? err.message : 'Image upload failed');
       setFoodImage(null);
     } finally {
       setImageUploading(false);
@@ -110,8 +111,7 @@ export default function TaskPage() {
   const labelClass = "text-[10px] font-bold uppercase tracking-wider text-[#9CA3AF] block mb-2";
 
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#070707', borderRadius: 10, fontSize: 14 } }}>
-    <main className="pt-24 pb-20 bg-[#F5F5F5]">
+    <main className="pt-24 pb-20 bg-[#FAFAFA]">
       <div className="max-w-3xl mx-auto px-8">
 
         {/* Header */}
@@ -179,20 +179,25 @@ export default function TaskPage() {
             >
               {foodImage && previewUrl ? (
                 <div className="flex flex-col items-center gap-2">
-                  <Spin spinning={imageUploading}>
-                    <div className="relative group w-32 h-32 rounded-xl overflow-hidden border border-gray-200">
-                      <img src={uploadedImageUrl || previewUrl} alt={foodImage.name} className="w-full h-full object-cover" />
+                  <div className="relative group w-32 h-32 rounded-xl overflow-hidden border border-gray-200">
+                    <img src={uploadedImageUrl || previewUrl} alt={foodImage.name} className="w-full h-full object-cover" />
+                    {imageUploading && (
+                      <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+                        <Loader2 className="w-5 h-5 text-[#FDA829] animate-spin" />
+                      </div>
+                    )}
+                    {!imageUploading && (
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100">
                         <button type="button" onClick={() => setShowPreview(true)} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-black/60 transition-all">
-                          <Eye className="w-4 h-4" style={{ color: '#fff' }} />
+                          <Eye className="w-4 h-4 text-white" />
                         </button>
                         <button type="button" onClick={handleRemoveImage} className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-red-500/80 hover:border-red-400/40 transition-all">
-                          <Trash2 className="w-4 h-4" style={{ color: '#fff' }} />
+                          <Trash2 className="w-4 h-4 text-white" />
                         </button>
                       </div>
-                      <p className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] px-2 py-1 truncate">{foodImage.name}</p>
-                    </div>
-                  </Spin>
+                    )}
+                    <p className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] px-2 py-1 truncate">{foodImage.name}</p>
+                  </div>
                 </div>
               ) : (
                 <>
@@ -218,12 +223,11 @@ export default function TaskPage() {
           ].map(({ label, value, setter, placeholder }) => (
             <div key={label}>
               <label className={labelClass}>{label} <span className="text-[#FFA800]">*</span></label>
-              <Input
+              <input
                 value={value}
-                onChange={e => setter(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setter(e.target.value)}
                 placeholder={placeholder}
-                size="large"
-                allowClear
+                className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[#111827] placeholder-[#9CA3AF] text-sm outline-none focus:border-[#FDA829] focus:ring-2 focus:ring-[rgba(253,168,41,0.12)] transition-all"
               />
             </div>
           ))}
@@ -258,23 +262,21 @@ export default function TaskPage() {
           )}
 
           {/* Submit */}
-          <AntButton
-            htmlType="submit"
-            type="primary"
-            size="large"
-            block
-            loading={submitting}
-            disabled={submitting}
-            style={{ height: 48, borderRadius: 12, fontWeight: 700 }}
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            disabled={submitting || !formFilled}
+            className="w-full h-12 gap-2"
           >
+            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
             {submitting ? 'Submitting…' : !isLoggedIn ? 'Connect Wallet & Submit' : 'Submit'}
-          </AntButton>
+          </Button>
         </form>
       </div>
 
       {showWalletModal && <WalletModal onClose={() => setShowWalletModal(false)} />}
 
-      {/* Image preview modal */}
       {showPreview && previewUrl && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -288,6 +290,5 @@ export default function TaskPage() {
         </div>
       )}
     </main>
-    </ConfigProvider>
   );
 }
