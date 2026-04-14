@@ -76,9 +76,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setWalletAddress(account.account);
         setWalletType(account.wallet_name);
       }
-    } catch {
-      // If getUserInfo fails, still set basic info from token
-      setWalletAddress(res.user_id);
+    } catch (e) {
+      console.error('[AppContext] getUserInfo failed:', e);
+      // Fallback: get address from connected wallet (MetaMask/window.ethereum)
+      try {
+        const ethereum = (window as unknown as { ethereum?: { request: (a: { method: string }) => Promise<string[]> } }).ethereum;
+        const accounts = await ethereum?.request({ method: 'eth_accounts' });
+        if (accounts?.[0]) {
+          setWalletAddress(accounts[0]);
+        } else {
+          setWalletAddress(res.user_id);
+        }
+      } catch {
+        setWalletAddress(res.user_id);
+      }
     }
   };
 
