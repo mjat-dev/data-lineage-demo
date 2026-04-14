@@ -93,34 +93,64 @@ const ASSET_CONTRIBUTORS = [
 ];
 
 // ── Asset Chip ────────────────────────────────────────────────────────────────
-function AssetChip({ name, onViewMore }: { name: string; assetId: string; onViewMore?: () => void }) {
+function AssetChip({ name, assetId, onViewMore }: { name: string; assetId: string; onViewMore?: () => void }) {
   const preview = ASSET_CONTRIBUTORS.slice(0, 3);
   const popover = (
-    <div className="bg-white rounded-xl p-4 w-68 text-left border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.08)]" style={{ width: 272 }}>
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[9px] uppercase font-bold text-[#FDA829] tracking-widest">
+    <div className="bg-white rounded-xl p-5 w-80 text-left border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+      <p className="text-[9px] uppercase font-bold text-[#FFA800] tracking-widest mb-3">Composition Logic</p>
+      <div className="bg-gray-50 rounded-xl p-3 relative border border-gray-100 mb-1.5">
+        <span className="absolute top-2 left-3 text-[9px] text-[#FFA800] font-bold opacity-50">X</span>
+        <div className="flex items-start justify-between pt-3">
+          <div><p className="text-xs font-bold text-[#070707]">Mushroom Image Set</p><p className="text-[10px] text-[#FFA800] font-mono">@chef_kenshiro</p></div>
+          <span className="text-[8px] font-bold bg-gray-100 px-2 py-0.5 rounded text-[#9CA3AF] shrink-0 ml-2">RAW DATA</span>
+        </div>
+      </div>
+      <div className="flex justify-center text-gray-300 my-1"><Plus className="w-4 h-4" /></div>
+      <div className="bg-gray-50 rounded-xl p-3 relative border border-gray-100 mb-1.5">
+        <span className="absolute top-2 left-3 text-[9px] text-[#3474FE] font-bold opacity-50">Y</span>
+        <div className="flex items-start justify-between pt-3">
+          <div><p className="text-xs font-bold text-[#070707]">Grade S Validation</p><p className="text-[10px] text-[#9CA3AF]">By Codatta QA Admin</p></div>
+          <span className="text-[8px] font-bold bg-gray-100 px-2 py-0.5 rounded text-[#9CA3AF] shrink-0 ml-2">VALIDATED</span>
+        </div>
+      </div>
+      <div className="flex justify-center text-gray-300 my-1"><span className="text-sm font-bold">=</span></div>
+      <div className="bg-[rgba(255,168,0,0.06)] rounded-xl p-3 border border-[rgba(255,168,0,0.15)] mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-lg bg-[rgba(255,168,0,0.10)] flex items-center justify-center shrink-0">
+            <Sparkles className="w-4 h-4 text-[#FFA800]" />
+          </div>
+          <div>
+            <p className="text-[8px] uppercase text-[#FFA800]/50 font-bold">Final Asset</p>
+            <p className="text-xs font-bold text-[#070707]">{name}</p>
+            <p className="text-[9px] font-mono text-[#9CA3AF]">{assetId}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Contributor ownership summary */}
+      <div className="border-t border-gray-100 pt-3">
+        <p className="text-[9px] uppercase font-bold text-[#9CA3AF] tracking-widest mb-2">
           Contributors · {ASSET_CONTRIBUTORS.length} total
         </p>
-        <span className="text-[9px] text-[#9CA3AF] font-mono">{name}</span>
-      </div>
-      <div className="space-y-1 mb-3">
-        {preview.map(({ id, label, percent, color, isYou }) => (
-          <div key={id} className={`flex items-center justify-between px-2 py-1.5 rounded-lg ${isYou ? 'bg-[rgba(253,168,41,0.08)]' : 'hover:bg-gray-50'}`}>
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
-              <span className={`text-[10px] truncate ${isYou ? 'font-bold text-[#FDA829]' : 'text-[#6B7280]'}`}>{label}</span>
+        <div className="space-y-0.5 mb-2">
+          {preview.map(({ id, label, percent, color, isYou }) => (
+            <div key={id} className={`flex items-center justify-between px-1.5 py-1 rounded-lg ${isYou ? 'bg-[rgba(253,168,41,0.06)]' : ''}`}>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
+                <span className={`text-[10px] truncate ${isYou ? 'font-bold text-[#FDA829]' : 'text-[#6B7280]'}`}>{label}</span>
+              </div>
+              <span className={`text-[10px] font-bold ml-2 shrink-0 ${isYou ? 'text-[#FDA829]' : 'text-[#070707]'}`}>{percent}%</span>
             </div>
-            <span className={`text-[10px] font-bold ml-2 shrink-0 ${isYou ? 'text-[#FDA829]' : 'text-[#070707]'}`}>{percent}%</span>
-          </div>
-        ))}
+          ))}
+        </div>
+        {onViewMore && (
+          <button
+            onMouseDown={(e) => { e.preventDefault(); onViewMore(); }}
+            className="w-full text-center text-[10px] font-bold text-[#FDA829] hover:text-[#E89B20] pt-2 border-t border-gray-100 flex items-center justify-center gap-1 transition-colors">
+            View All {ASSET_CONTRIBUTORS.length} Contributors <ArrowRight className="w-3 h-3" />
+          </button>
+        )}
       </div>
-      {onViewMore && (
-        <button
-          onMouseDown={(e) => { e.preventDefault(); onViewMore(); }}
-          className="w-full text-center text-[10px] font-bold text-[#FDA829] hover:text-[#E89B20] py-1.5 border-t border-gray-100 flex items-center justify-center gap-1 transition-colors">
-          View All {ASSET_CONTRIBUTORS.length} Contributors <ArrowRight className="w-3 h-3" />
-        </button>
-      )}
     </div>
   );
   return (
