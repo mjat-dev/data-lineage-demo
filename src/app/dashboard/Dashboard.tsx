@@ -1,11 +1,39 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FileUp, BadgeCheck, Link2, Coins, Wallet, ArrowRight, Inbox, Loader2 } from 'lucide-react';
+import { FileUp, BadgeCheck, Link2, Coins, Wallet, ArrowRight, Inbox, Loader2, Zap } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { getSubmissionStats, getSubmissionList, type SubmissionStats, type SubmissionRecord } from '@/lib/api';
+
+// ── Status pipeline ───────────────────────────────────────────────────────────
+const PIPELINE = ['submitted', 'validated', 'anchored', 'assetified', 'published'] as const;
+
+const STEP_INDEX: Record<string, number> = {
+  submitted: 0,
+  validated: 1,
+  packaged:  1, // legacy alias
+  anchored:  2,
+  assetified: 3,
+  published: 4,
+};
+
+interface NextStepConfig {
+  label: string;
+  sublabel: string;
+  variant: 'orange' | 'blue' | 'gray' | 'green';
+  isUserAction: boolean; // true = user must do something (highlighted)
+}
+
+const NEXT_STEP_CONFIG: Record<string, NextStepConfig> = {
+  submitted:  { label: '待审核',   sublabel: 'Pending Review',        variant: 'gray',   isUserAction: false },
+  validated:  { label: '待上链',   sublabel: 'Action Required',       variant: 'orange', isUserAction: true  },
+  packaged:   { label: '待上链',   sublabel: 'Action Required',       variant: 'orange', isUserAction: true  },
+  anchored:   { label: '待资产化', sublabel: 'Pending Assetification', variant: 'blue',   isUserAction: false },
+  assetified: { label: '待发布',   sublabel: 'Pending Publish',       variant: 'blue',   isUserAction: false },
+  published:  { label: '已完成',   sublabel: 'Published',             variant: 'green',  isUserAction: false },
+};
 
 export default function Dashboard() {
   const { isLoggedIn } = useApp();
@@ -54,19 +82,9 @@ export default function Dashboard() {
     },
   ];
 
-  const statusMap: Record<string, string> = {
-    submitted: 'Submitted',
-    validated: 'Validated',
-    packaged: 'Packaged',
-    anchored: 'Anchored',
-    assetified: 'Assetified',
-    published: 'Published',
-  };
-
-  const statusVariant = (s: string): 'orange' | 'blue' | 'gray' => {
-    if (s === 'anchored' || s === 'assetified' || s === 'published') return 'orange';
-    if (s === 'validated' || s === 'packaged') return 'blue';
-    return 'gray';
+  const getStatusConfig = (rawStatus: string): NextStepConfig => {
+    const key = (rawStatus || 'submitted').toLowerCase();
+    return NEXT_STEP_CONFIG[key] ?? NEXT_STEP_CONFIG.submitted;
   };
 
   return (
@@ -124,41 +142,70 @@ export default function Dashboard() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {records.map((record) => (
-                <Link key={record.submission_id} to="/lineage">
-                  <Card hover className="p-6 group">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-[rgba(255,168,0,0.10)] flex items-center justify-center shrink-0">
-                          <FileUp className="w-5 h-5 text-[#FFA800]" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-bold text-sm text-[#070707]">{record.frontier_name || 'Food Science'}</span>
-                            <span className="text-[9px] font-mono text-[#9CA3AF]">{record.submission_id.slice(-8)}</span>
+              {records.map((record) => {
+                const cfg = getStatusConfig(record.current_status);
+                const stepIdx = STEP_INDEX[(record.current_status || 'submitted').toLowerCase()] ?? 0;
+                return (
+                  <Link key={record.submission_id} to="/lineage">
+                    <Card hover className="p-6 group">
+                      <div className="flex items-center justify-between gap-4">
+                        {/* Left: icon + info */}
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-[rgba(255,168,0,0.10)] flex items-center justify-center shrink-0">
+                            <FileUp className="w-5 h-5 text-[#FFA800]" />
                           </div>
-                          <p className="text-xs text-[#6B7280]">
-                            {record.task_type_name || 'Contribute'} · {record.reward_show_name || '—'}
-                          </p>
-                          <p className="text-[10px] text-[#9CA3AF] mt-0.5 font-mono">
-                            {record.create_time ? new Date(record.create_time * 1000).toLocaleString() : '—'}
-                          </p>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-bold text-sm text-[#070707] truncate">{record.frontier_name || 'Food Science'}</span>
+                              <span className="text-[9px] font-mono text-[#9CA3AF] shrink-0">{record.submission_id.slice(-8)}</span>
+                            </div>
+                            <p className="text-xs text-[#6B7280]">
+                              {record.task_type_name || 'Contribute'} · {record.reward_show_name || '—'}
+                            </p>
+                            <p className="text-[10px] text-[#9CA3AF] mt-0.5 font-mono">
+                              {record.create_time ? new Date(record.create_time * 1000).toLocaleString() : '—'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Right: progress + next-step badge */}
+                        <div className="flex items-center gap-4 shrink-0">
+                          {/* Mini progress track (5 dots) */}
+                          <div className="hidden md:flex items-center gap-1.5">
+                            {PIPELINE.map((_, i) => (
+                              <div
+                                key={i}
+                                className={`rounded-full transition-all ${
+                                  i < stepIdx
+                                    ? 'w-1.5 h-1.5 bg-[#FFA800]'
+                                    : i === stepIdx
+                                    ? 'w-2 h-2 bg-[#FFA800] ring-2 ring-[rgba(255,168,0,0.25)]'
+                                    : 'w-1.5 h-1.5 bg-gray-200'
+                                }`}
+                              />
+                            ))}
+                          </div>
+
+                          {/* Next step badge */}
+                          <div className="flex items-center gap-1.5">
+                            {cfg.isUserAction && (
+                              <Zap className="w-3 h-3 text-[#FFA800] animate-pulse shrink-0" />
+                            )}
+                            <div className="flex flex-col items-end gap-0.5">
+                              <Badge variant={cfg.variant}>
+                                {cfg.label}
+                              </Badge>
+                              <span className="text-[9px] text-[#9CA3AF] font-mono">{cfg.sublabel}</span>
+                            </div>
+                          </div>
+
+                          <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-[#FFA800] transition-colors" />
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-4">
-                        <Badge variant={statusVariant(record.current_status)}>
-                          {statusMap[record.current_status] || record.current_status}
-                        </Badge>
-                        {record.chain_status === 2 && (
-                          <Badge variant="orange">On-chain</Badge>
-                        )}
-                        <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-[#FFA800] transition-colors" />
-                      </div>
-                    </div>
-                  </Card>
-                </Link>
-              ))}
+                    </Card>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </section>
