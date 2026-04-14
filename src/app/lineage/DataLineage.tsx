@@ -494,14 +494,6 @@ export default function DataLineage() {
                     <p className="text-[10px] text-[#9CA3AF] mt-3 italic">Complete Step 03 to trigger assetification.</p>
                   </div>
 
-                  <div className="flex items-center gap-3 p-4 rounded-xl bg-[rgba(255,168,0,0.06)] border border-[rgba(255,168,0,0.15)]">
-                    <AlertTriangle className="w-5 h-5 text-[#FFA800] shrink-0" />
-                    <p className="flex-1 text-sm text-[#6B7280]">Your data must be anchored on-chain before it can enter the dataset asset pipeline.</p>
-                    <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                      className="shrink-0 px-4 py-2 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-xs font-bold transition-colors">
-                      Anchor On-Chain →
-                    </button>
-                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
