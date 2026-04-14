@@ -15,13 +15,13 @@ import { formatDate } from '@/lib/utils';
 
 
 // ── Hover Popover ─────────────────────────────────────────────────────────────
-function HoverPopover({ children, content, align = 'left' }: { children: React.ReactNode; content: React.ReactNode; align?: 'left' | 'right' }) {
+function HoverPopover({ children, content, align = 'left', direction = 'down' }: { children: React.ReactNode; content: React.ReactNode; align?: 'left' | 'right'; direction?: 'up' | 'down' }) {
   const [show, setShow] = useState(false);
   return (
     <span className="relative inline-block" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
       {children}
       {show && (
-        <div className={`absolute top-full mt-2 z-50 ${align === 'right' ? 'right-0' : 'left-0'}`}
+        <div className={`absolute ${direction === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'} z-50 ${align === 'right' ? 'right-0' : 'left-0'}`}
           style={{ filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.10))' }}>
           {content}
         </div>
@@ -108,7 +108,7 @@ function AssetChip({ name, assetId }: { name: string; assetId: string }) {
     </div>
   );
   return (
-    <HoverPopover content={popover}>
+    <HoverPopover content={popover} direction="up">
       <span className="px-3 py-1 rounded-xl border border-[rgba(255,168,0,0.30)] bg-[rgba(255,168,0,0.08)] text-[#FFA800] text-xs font-bold cursor-default hover:bg-[rgba(255,168,0,0.12)] transition-all inline-flex items-center gap-1.5">
         <Package className="w-3 h-3" />{name}
       </span>
