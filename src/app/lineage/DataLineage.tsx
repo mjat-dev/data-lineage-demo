@@ -204,12 +204,6 @@ function MetadataDrawer({ onClose }: { onClose: () => void }) {
               <p className="text-xs font-mono text-[#6B7280]">{value}</p>
             </div>
           ))}
-          <div className="bg-[rgba(255,168,0,0.06)] border border-[rgba(255,168,0,0.15)] rounded-xl p-3 mt-4">
-            <p className="text-[9px] uppercase text-[#FFA800]/60 font-bold tracking-wider mb-1">Note</p>
-            <p className="text-xs text-[#6B7280] leading-relaxed">
-              Off-chain storage completes identity binding and DID snapshot registration. On-chain record begins from Node 3 (Anchor on-chain).
-            </p>
-          </div>
         </div>
       </div>
       <div className="flex-1 bg-black/20 backdrop-blur-sm" onClick={onClose} />
@@ -477,12 +471,6 @@ export default function DataLineage() {
                         {copied === 'cf-node' ? <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E]" /> : <Copy className="w-3.5 h-3.5 text-[#6B7280]" />}
                       </button>
                     </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <button onClick={() => setShowAnchorDetails(true)}
-                      className="px-4 py-2 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-xs font-bold transition-colors">
-                      Details
-                    </button>
                   </div>
                 </div>
               )}
