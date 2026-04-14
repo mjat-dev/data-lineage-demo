@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FileText, CheckCircle2, Link2, Package, Globe,
@@ -82,62 +82,50 @@ function IdentityChip({ handle, role, did, wallet }: { handle: string; role?: st
   );
 }
 
+// ── Dataset contributors (shared between AssetChip popover + Ownership Snapshot) ──
+const ASSET_CONTRIBUTORS = [
+  { id: 'you',     label: 'You · @chef_kenshiro', role: 'Contributor', percent: 28, color: '#FDA829', isYou: true  },
+  { id: 'c2',      label: '@food_explorer_ai',    role: 'Contributor', percent: 22, color: '#3474FE', isYou: false },
+  { id: 'c3',      label: '@nutrition_lab',        role: 'Contributor', percent: 18, color: '#9CA3AF', isYou: false },
+  { id: 'c4',      label: '@gourmet_data',         role: 'Contributor', percent: 15, color: '#6B7280', isYou: false },
+  { id: 'c5',      label: '@health_bits',          role: 'Contributor', percent: 10, color: '#9CA3AF', isYou: false },
+  { id: 'c6',      label: '@recipe_master',        role: 'Contributor', percent:  7, color: '#6B7280', isYou: false },
+];
+
 // ── Asset Chip ────────────────────────────────────────────────────────────────
-function AssetChip({ name, assetId }: { name: string; assetId: string }) {
+function AssetChip({ name, onViewMore }: { name: string; assetId: string; onViewMore?: () => void }) {
+  const preview = ASSET_CONTRIBUTORS.slice(0, 3);
   const popover = (
-    <div className="bg-white rounded-xl p-5 w-80 text-left border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
-      <p className="text-[9px] uppercase font-bold text-[#FFA800] tracking-widest mb-3">Composition Logic</p>
-      <div className="bg-gray-50 rounded-xl p-3 relative border border-gray-100 mb-1.5">
-        <span className="absolute top-2 left-3 text-[9px] text-[#FFA800] font-bold opacity-50">X</span>
-        <div className="flex items-start justify-between pt-3">
-          <div><p className="text-xs font-bold text-[#070707]">Mushroom Image Set</p><p className="text-[10px] text-[#FFA800] font-mono">@chef_kenshiro</p></div>
-          <span className="text-[8px] font-bold bg-gray-100 px-2 py-0.5 rounded text-[#9CA3AF] shrink-0 ml-2">RAW DATA</span>
-        </div>
+    <div className="bg-white rounded-xl p-4 w-68 text-left border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.08)]" style={{ width: 272 }}>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[9px] uppercase font-bold text-[#FDA829] tracking-widest">
+          Contributors · {ASSET_CONTRIBUTORS.length} total
+        </p>
+        <span className="text-[9px] text-[#9CA3AF] font-mono">{name}</span>
       </div>
-      <div className="flex justify-center text-gray-300 my-1"><Plus className="w-4 h-4" /></div>
-      <div className="bg-gray-50 rounded-xl p-3 relative border border-gray-100 mb-1.5">
-        <span className="absolute top-2 left-3 text-[9px] text-[#3474FE] font-bold opacity-50">Y</span>
-        <div className="flex items-start justify-between pt-3">
-          <div><p className="text-xs font-bold text-[#070707]">Grade S Validation</p><p className="text-[10px] text-[#9CA3AF]">By Codatta QA Admin</p></div>
-          <span className="text-[8px] font-bold bg-gray-100 px-2 py-0.5 rounded text-[#9CA3AF] shrink-0 ml-2">VALIDATED</span>
-        </div>
-      </div>
-      <div className="flex justify-center text-gray-300 my-1"><span className="text-sm font-bold">=</span></div>
-      <div className="bg-[rgba(255,168,0,0.06)] rounded-xl p-3 border border-[rgba(255,168,0,0.15)] mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-lg bg-[rgba(255,168,0,0.10)] flex items-center justify-center shrink-0">
-            <Sparkles className="w-4 h-4 text-[#FFA800]" />
-          </div>
-          <div>
-            <p className="text-[8px] uppercase text-[#FFA800]/50 font-bold">Final Asset</p>
-            <p className="text-xs font-bold text-[#070707]">{name}</p>
-            <p className="text-[9px] font-mono text-[#9CA3AF]">{assetId}</p>
-          </div>
-        </div>
-      </div>
-      <div className="border-t border-gray-100 pt-3">
-        <p className="text-[9px] uppercase font-bold text-[#9CA3AF] tracking-widest mb-2">Initial Ownership Summary</p>
-        {[
-          { role: 'Contributor', handle: '@chef_kenshiro', pct: 40, color: '#FFA800' },
-          { role: 'Validator', handle: 'Codatta QA Admin', pct: 25, color: '#3474FE' },
-          { role: 'Initial Staker', handle: '@alpha_backer', pct: 25, color: '#9CA3AF' },
-          { role: 'Protocol Treasury', handle: null, pct: 10, color: '#6B7280' },
-        ].map(({ role, handle, pct, color }) => (
-          <div key={role} className="flex items-center justify-between py-1">
-            <div className="flex items-center gap-1.5 min-w-0">
+      <div className="space-y-1 mb-3">
+        {preview.map(({ id, label, percent, color, isYou }) => (
+          <div key={id} className={`flex items-center justify-between px-2 py-1.5 rounded-lg ${isYou ? 'bg-[rgba(253,168,41,0.08)]' : 'hover:bg-gray-50'}`}>
+            <div className="flex items-center gap-2 min-w-0">
               <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
-              <span className="text-[10px] text-[#6B7280] shrink-0">{role}</span>
-              {handle && <span className="text-[10px] font-mono text-[#FFA800] ml-1">· {handle}</span>}
+              <span className={`text-[10px] truncate ${isYou ? 'font-bold text-[#FDA829]' : 'text-[#6B7280]'}`}>{label}</span>
             </div>
-            <span className="text-[10px] font-bold ml-2 shrink-0 text-[#070707]">{pct}%</span>
+            <span className={`text-[10px] font-bold ml-2 shrink-0 ${isYou ? 'text-[#FDA829]' : 'text-[#070707]'}`}>{percent}%</span>
           </div>
         ))}
       </div>
+      {onViewMore && (
+        <button
+          onMouseDown={(e) => { e.preventDefault(); onViewMore(); }}
+          className="w-full text-center text-[10px] font-bold text-[#FDA829] hover:text-[#E89B20] py-1.5 border-t border-gray-100 flex items-center justify-center gap-1 transition-colors">
+          View All {ASSET_CONTRIBUTORS.length} Contributors <ArrowRight className="w-3 h-3" />
+        </button>
+      )}
     </div>
   );
   return (
     <HoverPopover content={popover} direction="up">
-      <span className="px-3 py-1 rounded-xl border border-[rgba(255,168,0,0.30)] bg-[rgba(255,168,0,0.08)] text-[#FFA800] text-xs font-bold cursor-default hover:bg-[rgba(255,168,0,0.12)] transition-all inline-flex items-center gap-1.5">
+      <span className="px-3 py-1 rounded-xl border border-[rgba(255,168,0,0.30)] bg-[rgba(255,168,0,0.08)] text-[#FDA829] text-xs font-bold cursor-default hover:bg-[rgba(255,168,0,0.12)] transition-all inline-flex items-center gap-1.5">
         <Package className="w-3 h-3" />{name}
       </span>
     </HoverPopover>
@@ -273,7 +261,15 @@ export default function DataLineage() {
   const [showMetadata, setShowMetadata] = useState(false);
   const [circulationOpen, setCirculationOpen] = useState(true);
   const [ownershipOpen, setOwnershipOpen] = useState(true);
+  const [ownershipShowAll, setOwnershipShowAll] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const ownershipRef = useRef<HTMLDivElement>(null);
+
+  const handleViewMoreOwnership = () => {
+    setOwnershipOpen(true);
+    setOwnershipShowAll(true);
+    setTimeout(() => ownershipRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  };
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -513,7 +509,7 @@ export default function DataLineage() {
                   {/* Asset chip + HuggingFace link */}
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm text-[#070707]">Dataset Asset:</p>
-                    <AssetChip name="Food-Science-Asset-42" assetId="asset_882_v1" />
+                    <AssetChip name="Food-Science-Asset-42" assetId="asset_882_v1" onViewMore={handleViewMoreOwnership} />
                     <p className="text-sm text-[#9CA3AF]">published to</p>
                     <a href="https://huggingface.co/datasets/Codatta/MM-Food-100K" target="_blank" rel="noopener noreferrer"
                       className="px-3 py-1 rounded-xl border border-gray-200 bg-white text-[#070707] text-xs font-bold hover:border-[#FFA800]/40 hover:text-[#FFA800] transition-colors inline-flex items-center gap-1">
@@ -653,46 +649,77 @@ export default function DataLineage() {
               </Card>
 
               {/* Current Ownership */}
+              <div ref={ownershipRef}>
               <Card className="overflow-hidden p-0">
                 <button onClick={() => setOwnershipOpen(o => !o)}
                   className="w-full flex items-center justify-between p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center gap-3">
-                    <PieChart className="w-4 h-4 text-[#FFA800]" />
+                    <PieChart className="w-4 h-4 text-[#FDA829]" />
                     <span className="text-sm font-bold uppercase tracking-wider text-[#070707]">Current Ownership Snapshot</span>
                   </div>
                   <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${ownershipOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {ownershipOpen && (
                   <div className="p-5">
-                    {[
-                      ...(anchored ? [{ label: 'You · @chef_kenshiro', did: 'Contributor', percent: 65, color: '#FFA800' }] : []),
-                      { label: 'Protocol Validator', did: 'Validator', percent: 25, color: '#3474FE' },
-                      { label: 'Protocol Treasury', did: 'Treasury', percent: 10, color: '#9CA3AF' },
-                      ...(!anchored ? [{ label: 'You (unanchored)', did: 'Contributor', percent: 0, color: '#E5E7EB' }] : []),
-                    ].map(({ label, did, percent, color }) => (
-                      <div key={did} className="flex items-center justify-between py-3 px-2 rounded-xl even:bg-gray-50">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                            style={{ background: `${color}22`, color }}>
-                            {label.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-[#070707]">{label}</p>
-                            <p className="text-[9px] font-mono text-[#9CA3AF]">{did}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 shrink-0">
-                          <div className="w-36 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${percent}%`, background: color }} />
-                          </div>
-                          <span className="text-xs font-bold font-mono w-8 text-right text-[#070707]">{percent}%</span>
-                        </div>
+                    {!anchored && (
+                      <div className="mb-4 p-3 rounded-xl bg-[rgba(255,168,0,0.06)] border border-[rgba(255,168,0,0.15)] text-xs text-[#6B7280] flex items-start gap-2">
+                        <Info className="w-3.5 h-3.5 text-[#FDA829] shrink-0 mt-0.5" />
+                        <span>Anchor on-chain to activate your contributor share.</span>
                       </div>
-                    ))}
-                    {!anchored && <p className="text-[10px] text-[#9CA3AF] italic mt-3">Anchor on-chain to claim the contributor share (65 tokens).</p>}
+                    )}
+                    {(() => {
+                      const list = anchored
+                        ? ASSET_CONTRIBUTORS
+                        : ASSET_CONTRIBUTORS.map(c => c.isYou ? { ...c, percent: 0, color: '#E5E7EB', pending: true } : c);
+                      const visible = ownershipShowAll ? list : list.slice(0, 3);
+                      return (
+                        <>
+                          {visible.map((c) => {
+                            const isPending = !anchored && c.isYou;
+                            return (
+                              <div key={c.id} className={`flex items-center justify-between py-3 px-2 rounded-xl even:bg-gray-50 ${c.isYou && anchored ? 'bg-[rgba(253,168,41,0.04)]' : ''}`}>
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                                    style={{ background: `${c.color}22`, color: c.color }}>
+                                    {c.label.replace('You · ', '').slice(0, 2).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <p className={`text-xs font-bold ${c.isYou ? 'text-[#FDA829]' : 'text-[#070707]'}`}>{c.label}</p>
+                                    <p className="text-[9px] font-mono text-[#9CA3AF]">{c.role}{isPending ? ' · Pending anchor' : ''}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-4 shrink-0">
+                                  <div className="w-28 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${c.percent}%`, background: c.color }} />
+                                  </div>
+                                  <span className={`text-xs font-bold font-mono w-8 text-right ${isPending ? 'text-[#9CA3AF]' : 'text-[#070707]'}`}>
+                                    {isPending ? '—' : `${c.percent}%`}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {!ownershipShowAll && list.length > 3 && (
+                            <button
+                              onClick={() => setOwnershipShowAll(true)}
+                              className="mt-3 w-full text-center text-[10px] font-bold text-[#FDA829] hover:text-[#E89B20] py-2 border border-dashed border-[rgba(253,168,41,0.30)] rounded-xl flex items-center justify-center gap-1 transition-colors">
+                              + {list.length - 3} more contributors <ChevronDown className="w-3 h-3" />
+                            </button>
+                          )}
+                          {ownershipShowAll && list.length > 3 && (
+                            <button
+                              onClick={() => setOwnershipShowAll(false)}
+                              className="mt-3 w-full text-center text-[10px] text-[#9CA3AF] hover:text-[#6B7280] py-1.5 flex items-center justify-center gap-1 transition-colors">
+                              Show less <ChevronDown className="w-3 h-3 rotate-180" />
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </Card>
+              </div>
             </div>
           </NodeWrapper>
         </div>}
