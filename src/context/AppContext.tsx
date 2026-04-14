@@ -15,17 +15,21 @@ export interface Submission {
   status: string;
 }
 
+interface LoginResponse {
+  token: string;
+  old_token?: string;
+  user_id: string;
+  new_user: boolean;
+}
+
 interface AppContextType {
   // Auth
   walletAddress: string | null;
   walletType: string | null;
   userInfo: UserInfo | null;
   isLoggedIn: boolean;
-  setAuth: (token: string, walletType: string, walletAddress: string) => Promise<void>;
+  loginWithResponse: (res: LoginResponse) => Promise<void>;
   disconnectWallet: () => void;
-
-  // Legacy helpers (keep for component compat)
-  connectWallet: (type: string) => void;
 
   // Submission
   submission: Submission | null;
@@ -45,7 +49,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [anchored, setAnchored] = useState(false);
 
-  // Re-hydrate if token exists in session (page refresh)
+  // Re-hydrate if token exists (page refresh)
   useEffect(() => {
     if (hasToken()) {
       getUserInfo().then(info => {
@@ -61,12 +65,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const setAuth = async (token: string, type: string, address: string) => {
-    saveToken(token);
-    setWalletType(type);
-    setWalletAddress(address);
-    const info = await getUserInfo();
-    setUserInfo(info);
+  // Called by WalletModal after CodattaSignin returns login response
+  const loginWithResponse = async (res: LoginResponse) => {
+    saveToken(res);
+    try {
+      const info = await getUserInfo();
+      setUserInfo(info);
+      const account = info.accounts_data.find(a => a.current_account);
+      if (account) {
+        setWalletAddress(account.account);
+        setWalletType(account.wallet_name);
+      }
+    } catch {
+      // If getUserInfo fails, still set basic info from token
+      setWalletAddress(res.user_id);
+    }
   };
 
   const disconnectWallet = () => {
@@ -78,13 +91,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAnchored(false);
   };
 
-  // Demo mode: select wallet → immediately "logged in" with placeholder address.
-  // TODO: Replace with real setAuth flow during API 联调.
-  const connectWallet = (type: string) => {
-    setWalletType(type);
-    setWalletAddress('0x71C7...a3F8');
-  };
-
   const isLoggedIn = !!walletAddress;
 
   return (
@@ -93,9 +99,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       walletType,
       userInfo,
       isLoggedIn,
-      setAuth,
+      loginWithResponse,
       disconnectWallet,
-      connectWallet,
       submission,
       setSubmission,
       anchored,

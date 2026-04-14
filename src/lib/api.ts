@@ -1,7 +1,7 @@
-const BASE_URL = 'https://app-test.b18a.io';
+const BASE_URL = '';
 
 function getToken(): string {
-  return sessionStorage.getItem('codatta_token') || '';
+  return localStorage.getItem('auth') || '';
 }
 
 async function request<T>(
@@ -233,14 +233,18 @@ export async function uploadFile(file: File): Promise<string> {
 
 // ── Token helpers ─────────────────────────────────────────────────────────────
 
-export function saveToken(token: string) {
-  sessionStorage.setItem('codatta_token', token);
+export function saveToken(res: { token: string; old_token?: string; user_id: string }) {
+  localStorage.setItem('auth', res.token);
+  localStorage.setItem('token', res.old_token || '');
+  localStorage.setItem('uid', res.user_id);
 }
 
 export function clearToken() {
-  sessionStorage.removeItem('codatta_token');
+  localStorage.removeItem('auth');
+  localStorage.removeItem('token');
+  localStorage.removeItem('uid');
 }
 
 export function hasToken(): boolean {
-  return !!sessionStorage.getItem('codatta_token');
+  return !!localStorage.getItem('auth');
 }

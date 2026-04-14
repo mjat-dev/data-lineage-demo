@@ -8,6 +8,18 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'react': path.resolve(__dirname, './node_modules/react'),
+      'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
+    },
+  },
+  server: {
+    port: 5175,
+    host: '0.0.0.0',
+    proxy: {
+      '/api': {
+        target: 'https://app-test.b18a.io/',
+        changeOrigin: true,
+      },
     },
   },
 })

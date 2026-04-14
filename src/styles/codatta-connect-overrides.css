@@ -1,0 +1,11 @@
+/* Override codatta-connect Tailwind v3 reset that clobbers our nav links */
+nav a {
+  color: revert-layer;
+}
+nav a.text-white,
+nav a[class*="text-white"] {
+  color: #fff !important;
+}
+nav a[class*="text-[#6B7280]"] {
+  color: #6B7280 !important;
+}
