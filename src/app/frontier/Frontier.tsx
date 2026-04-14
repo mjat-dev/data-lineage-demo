@@ -54,14 +54,21 @@ function AvatarStack({ avatars }: { avatars: string[] }) {
 export default function Frontier() {
   const navigate = useNavigate();
   const { isLoggedIn } = useApp();
-  const [frontiers, setFrontiers] = useState<FrontierItem[]>([DEMO_FRONTIER]);
+  const [frontiers, setFrontiers] = useState<FrontierItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Try to load real data when logged in; fall back to demo card silently
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn) {
+      setFrontiers([DEMO_FRONTIER]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     getFrontierList()
-      .then(list => { if (list.length > 0) setFrontiers(list); })
-      .catch(() => { /* keep demo fallback */ });
+      .then(list => setFrontiers(list.length > 0 ? list : [DEMO_FRONTIER]))
+      .catch(() => setFrontiers([DEMO_FRONTIER]))
+      .finally(() => setLoading(false));
   }, [isLoggedIn]);
 
   const handleClick = (f: FrontierItem) => {
@@ -105,8 +112,26 @@ export default function Frontier() {
       <div className="max-w-6xl mx-auto px-8">
         <h2 className="text-[#070707] font-bold text-base mb-4">Recent Frontiers</h2>
 
-        <div className="grid grid-cols-1 gap-3 max-w-sm">
-            {frontiers.map(f => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {loading ? (
+              Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="relative rounded-2xl overflow-hidden bg-gray-200 animate-pulse" style={{ aspectRatio: '4/3' }}>
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <div className="h-4 w-32 bg-gray-300 rounded mb-2" />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-5 h-5 rounded-full bg-gray-300" />
+                        <div className="w-5 h-5 rounded-full bg-gray-300 -ml-1.5" />
+                        <div className="h-3 w-8 bg-gray-300 rounded" />
+                      </div>
+                      <div className="flex gap-0.5">
+                        {[1,2,3,4,5].map(j => <div key={j} className="w-3.5 h-3.5 rounded-sm bg-gray-300" />)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : frontiers.map(f => (
               <div
                 key={f.frontier_id}
                 onClick={() => handleClick(f)}
@@ -142,7 +167,7 @@ export default function Frontier() {
                 )}
               </div>
             ))}
-          </div>
+        </div>
       </div>
     </main>
   );
