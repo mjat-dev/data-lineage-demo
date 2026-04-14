@@ -45,14 +45,6 @@ export default function AnchorModal({ onClose, onSuccess }: AnchorModalProps) {
           {/* Submission info */}
           <div className="bg-[#F9FAFB] rounded-xl p-4 mb-3 space-y-3 border border-[#F1F3F5]">
             <div className="flex justify-between text-sm">
-              <span className="text-[#9CA3AF]">Submission</span>
-              <div className="text-right">
-                <p className="text-[#111827] font-semibold">{foodName}</p>
-                <p className="text-[10px] font-mono text-[#9CA3AF]">#{subId}</p>
-              </div>
-            </div>
-
-            <div className="flex justify-between text-sm border-t border-[#F1F3F5] pt-3">
               <span className="text-[#9CA3AF]">Contributor</span>
               <span className="text-[#111827] font-mono text-xs">{wallet}</span>
             </div>
