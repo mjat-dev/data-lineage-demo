@@ -249,8 +249,6 @@ export default function DataLineage() {
   const [showAnchorModal, setShowAnchorModal] = useState(false);
   const [showAnchorDetails, setShowAnchorDetails] = useState(false);
   const [showMetadata, setShowMetadata] = useState(false);
-  const [showClaimModal, setShowClaimModal] = useState(false);
-  const [claimed, setClaimed] = useState(false);
   const [circulationOpen, setCirculationOpen] = useState(true);
   const [ownershipOpen, setOwnershipOpen] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
@@ -590,7 +588,7 @@ export default function DataLineage() {
                     <div className="space-y-8 relative pl-6 border-l border-gray-200">
                       {[
                         ...(anchored ? [
-                          { id: 'you-mint', time: '2025-11-25 11:30', type: 'Mint', title: 'ERC-1155 tokens minted to You', desc: claimed ? 'Your 65 ownership tokens claimed and minted to your wallet.' : 'Your 65 ownership tokens are ready to claim.', from: null, to: '@chef_kenshiro (You)', share: '65 tokens', tx: claimed ? '0xd94e...7f3a' : null, highlight: true, claimable: !claimed },
+                          { id: 'you-mint', time: '2025-11-25 11:30', type: 'Mint', title: 'ERC-1155 tokens minted to You', desc: 'Your 65 ownership tokens minted to your wallet.', from: null, to: '@chef_kenshiro (You)', share: '65 tokens', tx: '0xd94e...7f3a', highlight: true, claimable: false },
                           { id: 'val-mint', time: '2025-11-26 09:00', type: 'Mint', title: 'Validator share minted', desc: 'Protocol validator share minted. 25 tokens.', from: null, to: 'Protocol Validator', share: '25 tokens', tx: '0x3d82...a01c', highlight: false, claimable: false },
                           { id: 'treasury-mint', time: '2025-11-26 09:00', type: 'Mint', title: 'Treasury share minted', desc: 'Protocol treasury share. 10 tokens.', from: null, to: 'Protocol Treasury', share: '10 tokens', tx: '0x3d82...a01c', highlight: false, claimable: false },
                           { id: 'backer-a', time: '2025-11-27 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@alpha_backer', to: 'Backer A', share: '10 tokens', tx: '0xa13f...92bd', highlight: false, claimable: false },
@@ -601,28 +599,20 @@ export default function DataLineage() {
                         ]),
                       ].map((evt) => (
                         <div key={evt.id} className="relative">
-                          <div className={`absolute -left-[30px] top-1 w-4 h-4 rounded-full border-2 ${evt.highlight ? (claimed ? 'bg-[#22C55E] border-[#22C55E]' : 'bg-[#FFA800] border-[#FFA800] animate-pulse') : 'bg-white border-gray-300'}`} />
+                          <div className={`absolute -left-[30px] top-1 w-4 h-4 rounded-full border-2 ${evt.highlight ? 'bg-[#FDA829] border-[#FDA829]' : 'bg-white border-gray-300'}`} />
                           <div className="space-y-2">
                             <div className="flex items-center gap-2 text-[11px]">
                               <span className="font-mono text-[#9CA3AF]">{evt.time}</span>
                               <Badge variant={evt.type === 'Transfer' ? 'blue' : 'orange'}>{evt.type}</Badge>
-                              {evt.claimable && <Badge variant="orange">Pending Claim</Badge>}
-                              {evt.highlight && claimed && <Badge variant="green">Claimed</Badge>}
                             </div>
-                            <p className="text-sm font-bold text-[#070707]">{evt.title}</p>
+                            <p className="text-sm font-bold text-[#111827]">{evt.title}</p>
                             <p className="text-xs text-[#9CA3AF]">{evt.desc}</p>
-                            <div className={`p-3 rounded-xl border text-[11px] grid grid-cols-2 md:grid-cols-4 gap-3 ${evt.highlight ? 'bg-[rgba(255,168,0,0.06)] border-[rgba(255,168,0,0.15)]' : 'bg-gray-50 border-gray-100'}`}>
+                            <div className={`p-3 rounded-xl border text-[11px] grid grid-cols-2 md:grid-cols-4 gap-3 ${evt.highlight ? 'bg-[rgba(253,168,41,0.06)] border-[rgba(253,168,41,0.15)]' : 'bg-gray-50 border-gray-100'}`}>
                               {evt.from && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">From</span><span className="font-bold text-[#6B7280] truncate block">{evt.from}</span></div>}
                               <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">To</span><span className="font-bold text-[#6B7280] truncate block">{evt.to}</span></div>
-                              <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Share</span><span className="font-bold text-[#070707]">{evt.share}</span></div>
+                              <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Share</span><span className="font-bold text-[#111827]">{evt.share}</span></div>
                               {evt.tx && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Tx Hash</span><a href={`https://etherscan.io/tx/${evt.tx}`} target="_blank" rel="noopener noreferrer" className="text-[#3474FE] hover:underline flex items-center gap-1">{evt.tx} <ExternalLink className="w-3 h-3" /></a></div>}
                             </div>
-                            {evt.claimable && (
-                              <button onClick={() => setShowClaimModal(true)}
-                                className="mt-2 px-5 py-2.5 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-xs font-bold transition-colors">
-                                Claim Tokens →
-                              </button>
-                            )}
                           </div>
                         </div>
                       ))}
@@ -691,32 +681,6 @@ export default function DataLineage() {
       {showAnchorModal && <AnchorModal onClose={() => setShowAnchorModal(false)} onSuccess={() => setAnchored(true)} />}
       {showMetadata && <MetadataDrawer onClose={() => setShowMetadata(false)} />}
 
-      {/* Claim Modal */}
-      {showClaimModal && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/30 backdrop-blur-sm p-4"
-          onClick={() => setShowClaimModal(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-sm shadow-[0_8px_32px_rgba(0,0,0,0.12)]" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
-              <h3 className="text-base font-bold text-[#070707]">Claim Your Tokens</h3>
-              <button onClick={() => setShowClaimModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                <X className="w-4 h-4 text-[#6B7280]" />
-              </button>
-            </div>
-            <div className="p-6 space-y-5">
-              <p className="text-sm text-[#6B7280]">Claim your ERC-1155 ownership tokens to your wallet. This is an on-chain transaction.</p>
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2 text-xs">
-                <div className="flex justify-between"><span className="text-[#9CA3AF]">Tokens</span><span className="font-bold text-[#070707]">65 ERC-1155</span></div>
-                <div className="flex justify-between"><span className="text-[#9CA3AF]">To</span><span className="font-mono text-[#070707]">{walletAddr}</span></div>
-                <div className="flex justify-between"><span className="text-[#9CA3AF]">Network Fee</span><span className="font-mono text-[#6B7280]">~0.0001 ETH</span></div>
-              </div>
-              <button onClick={() => { setClaimed(true); setShowClaimModal(false); }}
-                className="w-full py-3 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-sm font-bold transition-colors">
-                Confirm Claim
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Anchor Details Modal */}
       {showAnchorDetails && (
