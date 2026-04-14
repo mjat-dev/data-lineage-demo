@@ -1,13 +1,5 @@
 import { CodattaSignin } from 'codatta-connect';
 import { useApp } from '@/context/AppContext';
-import { Modal } from '@/components/ui/Modal';
-
-interface LoginResponse {
-  token: string;
-  old_token?: string;
-  user_id: string;
-  new_user: boolean;
-}
 
 export default function WalletModal({ onClose }: { onClose: () => void }) {
   const { loginWithResponse } = useApp();
@@ -19,7 +11,11 @@ export default function WalletModal({ onClose }: { onClose: () => void }) {
     inviterCode: '',
   };
 
-  async function handleLogin(res: LoginResponse) {
+  // Matches Frontier's auth-modal.tsx exactly
+  async function handleLogin(res: { token: string; old_token?: string; user_id: string; new_user: boolean }) {
+    localStorage.setItem('token', res.old_token || '');
+    localStorage.setItem('uid', res.user_id);
+    localStorage.setItem('auth', res.token);
     await loginWithResponse(res);
     onClose();
   }
@@ -35,12 +31,6 @@ export default function WalletModal({ onClose }: { onClose: () => void }) {
         style={{ animation: 'scaleIn 0.2s ease forwards' }}
         onClick={e => e.stopPropagation()}
       >
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 z-10 p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
         <CodattaSignin onLogin={handleLogin} config={config} />
       </div>
     </div>
