@@ -7,7 +7,16 @@ import WalletModal from '@/components/WalletModal';
 
 export default function Navbar() {
   const location = useLocation();
-  const { walletAddress, disconnectWallet } = useApp();
+  const { walletAddress, userInfo, disconnectWallet } = useApp();
+
+  // Prefer wallet address from userInfo accounts (real 0x address), fallback to walletAddress
+  const displayAddress = (() => {
+    const addr = userInfo?.accounts_data?.find(a => a.current_account)?.account || walletAddress || '';
+    if (addr.startsWith('0x') && addr.length > 10) {
+      return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    }
+    return addr.slice(0, 12) + (addr.length > 12 ? '...' : '');
+  })();
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [showDisconnect, setShowDisconnect] = useState(false);
 
@@ -63,7 +72,7 @@ export default function Navbar() {
                 <div className="w-6 h-6 rounded-full bg-[rgba(255,168,0,0.15)] flex items-center justify-center">
                   <User className="w-3 h-3 text-[#FFA800]" />
                 </div>
-                <span className="text-xs font-mono text-[#6B7280]">{walletAddress}</span>
+                <span className="text-xs font-mono text-[#6B7280]">{displayAddress}</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
               </button>
               {showDisconnect && (
