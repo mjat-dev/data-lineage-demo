@@ -13,7 +13,7 @@ export default function WalletModal({ onClose }: { onClose: () => void }) {
   const { loginWithResponse } = useApp();
 
   const config = {
-    channel: '',
+    channel: 'codatta-platform-website',
     device: 'WEB' as const,
     app: 'codatta-platform-website',
     inviterCode: '',
