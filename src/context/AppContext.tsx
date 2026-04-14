@@ -26,7 +26,7 @@ export function shortenAddress(address: string, len = 12): string {
   if (!address) return '';
   if (address.length <= len) return address;
   const half = Math.floor(len / 2);
-  return `${address.slice(0, half + 2)}...${address.slice(-half)}`;
+  return `${address.slice(0, half)}...${address.slice(-half)}`;
 }
 
 interface AppContextType {
