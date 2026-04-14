@@ -619,59 +619,54 @@ export default function DataLineage() {
                 </button>
                 {circulationOpen && (
                   <div className="p-5">
-                    {!anchored && (
-                      <div className="mb-5 p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs text-[#6B7280] flex items-start gap-2">
-                        <Info className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-                        <span>Other contributors who have anchored their data can earn royalties when their ownership tokens are transferred or traded. Anchor your data in Step 03 to participate.</span>
+                    {!anchored ? (
+                      /* ── Empty state: no on-chain activity until user anchors ── */
+                      <div className="flex flex-col items-center gap-3 py-8 text-center">
+                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                          <History className="w-5 h-5 text-gray-300" />
+                        </div>
+                        <p className="text-sm font-medium text-[#070707]">No activity yet</p>
+                        <p className="text-xs text-[#9CA3AF] max-w-xs leading-relaxed">
+                          Circulation records appear after your data is anchored on-chain, the dataset is assetified, and ownership tokens are minted.
+                        </p>
+                        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                          className="mt-1 px-4 py-2 border border-[rgba(255,168,0,0.30)] rounded-xl text-[#FDA829] text-xs font-bold hover:bg-[rgba(255,168,0,0.08)] transition-colors">
+                          Anchor on-chain → Step 03
+                        </button>
                       </div>
-                    )}
-                    <div className="space-y-8 relative pl-6 border-l border-gray-200">
-                      {[
-                        ...(anchored ? [
+                    ) : (
+                      /* ── Anchored: real mint + transfer records ── */
+                      <div className="space-y-8 relative pl-6 border-l border-gray-200">
+                        {[
                           { id: 'you-mint', time: '2025-11-25 11:30', type: 'Mint', title: 'ERC-1155 tokens minted to You', desc: 'Your 65 ownership tokens minted to your wallet.', from: null, to: '@chef_kenshiro (You)', share: '65 tokens', tx: '0xd94e...7f3a', highlight: true },
                           { id: 'backer-a', time: '2025-11-27 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@alpha_backer', to: 'Backer A', share: '10 tokens', tx: '0xa13f...92bd', highlight: false },
                           { id: 'backer-b', time: '2025-11-28 09:42', type: 'Transfer', title: 'Backer B purchased 5 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@alpha_backer', to: 'Backer B', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false },
-                        ] : [
-                          { id: 'backer-a-pre', time: '2025-11-23 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 direct transfer via wallet. You cannot trade your share until you anchor on-chain.', from: '@other_contributor', to: 'Backer A', share: '10 tokens', tx: '0xa13f...92bd', highlight: false },
-                          { id: 'backer-b-pre', time: '2025-11-24 09:42', type: 'Transfer', title: 'Backer B purchased 5 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@other_contributor', to: 'Backer B', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false },
-                        ]),
-                      ].map((evt) => (
-                        <div key={evt.id} className="relative">
-                          <div className={`absolute -left-[30px] top-1 w-4 h-4 rounded-full border-2 ${evt.highlight ? 'bg-[#FDA829] border-[#FDA829]' : 'bg-white border-gray-300'}`} />
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-[11px]">
-                              <span className="font-mono text-[#9CA3AF]">{evt.time}</span>
-                              <Badge variant={evt.type === 'Transfer' ? 'blue' : 'orange'}>{evt.type}</Badge>
+                        ].map((evt) => (
+                          <div key={evt.id} className="relative">
+                            <div className={`absolute -left-[30px] top-1 w-4 h-4 rounded-full border-2 ${evt.highlight ? 'bg-[#FDA829] border-[#FDA829]' : 'bg-white border-gray-300'}`} />
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-[11px]">
+                                <span className="font-mono text-[#9CA3AF]">{evt.time}</span>
+                                <Badge variant={evt.type === 'Transfer' ? 'blue' : 'orange'}>{evt.type}</Badge>
+                              </div>
+                              <p className="text-sm font-bold text-[#111827]">{evt.title}</p>
+                              <p className="text-xs text-[#9CA3AF]">{evt.desc}</p>
+                              <div className={`p-3 rounded-xl border text-[11px] grid grid-cols-2 md:grid-cols-4 gap-3 ${evt.highlight ? 'bg-[rgba(253,168,41,0.06)] border-[rgba(253,168,41,0.15)]' : 'bg-gray-50 border-gray-100'}`}>
+                                {evt.from && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">From</span><span className="font-bold text-[#6B7280] truncate block">{evt.from}</span></div>}
+                                <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">To</span><span className="font-bold text-[#6B7280] truncate block">{evt.to}</span></div>
+                                <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Share</span><span className="font-bold text-[#111827]">{evt.share}</span></div>
+                                {evt.tx && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Tx Hash</span><a href={`https://etherscan.io/tx/${evt.tx}`} target="_blank" rel="noopener noreferrer" className="text-[#3474FE] hover:underline flex items-center gap-1">{evt.tx} <ExternalLink className="w-3 h-3" /></a></div>}
+                              </div>
+                              {evt.id === 'you-mint' && (
+                                <a href="https://basescan.org/address/0xfdbf" target="_blank" rel="noopener noreferrer"
+                                  className="mt-1 w-full py-2.5 bg-[#FDA829] hover:bg-[#E89B20] active:bg-[#D08A10] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-colors">
+                                  <Coins className="w-4 h-4" />
+                                  Claim My 65 Tokens →
+                                </a>
+                              )}
                             </div>
-                            <p className="text-sm font-bold text-[#111827]">{evt.title}</p>
-                            <p className="text-xs text-[#9CA3AF]">{evt.desc}</p>
-                            <div className={`p-3 rounded-xl border text-[11px] grid grid-cols-2 md:grid-cols-4 gap-3 ${evt.highlight ? 'bg-[rgba(253,168,41,0.06)] border-[rgba(253,168,41,0.15)]' : 'bg-gray-50 border-gray-100'}`}>
-                              {evt.from && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">From</span><span className="font-bold text-[#6B7280] truncate block">{evt.from}</span></div>}
-                              <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">To</span><span className="font-bold text-[#6B7280] truncate block">{evt.to}</span></div>
-                              <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Share</span><span className="font-bold text-[#111827]">{evt.share}</span></div>
-                              {evt.tx && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Tx Hash</span><a href={`https://etherscan.io/tx/${evt.tx}`} target="_blank" rel="noopener noreferrer" className="text-[#3474FE] hover:underline flex items-center gap-1">{evt.tx} <ExternalLink className="w-3 h-3" /></a></div>}
-                            </div>
-                            {/* Prominent claim button for user's own mint */}
-                            {evt.id === 'you-mint' && (
-                              <a href="https://basescan.org/address/0xfdbf" target="_blank" rel="noopener noreferrer"
-                                className="mt-1 w-full py-2.5 bg-[#FDA829] hover:bg-[#E89B20] active:bg-[#D08A10] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-colors">
-                                <Coins className="w-4 h-4" />
-                                Claim My 65 Tokens →
-                              </a>
-                            )}
                           </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {!anchored && (
-                      <div className="mt-6 flex items-center gap-3 p-4 rounded-xl bg-[rgba(255,168,0,0.06)] border border-[rgba(255,168,0,0.15)]">
-                        <AlertTriangle className="w-5 h-5 text-[#FFA800] shrink-0" />
-                        <p className="flex-1 text-xs text-[#6B7280]">Others are minting and trading tokens. You cannot trade your share until you anchor on-chain.</p>
-                        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                          className="shrink-0 px-4 py-2 border border-[rgba(255,168,0,0.30)] rounded-xl text-[#FFA800] text-xs font-bold hover:bg-[rgba(255,168,0,0.08)] transition-colors">
-                          ← Step 03
-                        </button>
+                        ))}
                       </div>
                     )}
                   </div>
