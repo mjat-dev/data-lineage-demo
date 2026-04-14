@@ -576,7 +576,6 @@ export default function DataLineage() {
                       </div>
                     </div>
                   </div>
-                  <p className="text-[11px] text-[#9CA3AF] italic">Hover the asset chip to view dataset composition and ownership summary.</p>
                 </div>
               )}
             </CollapsibleCard>
