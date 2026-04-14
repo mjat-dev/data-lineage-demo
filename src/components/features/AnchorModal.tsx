@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link2, Clock, ExternalLink, Sparkles } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { useApp } from '@/context/AppContext';
+import { truncateAddress } from '@/lib/utils';
 
 interface AnchorModalProps {
   onClose: () => void;
@@ -9,7 +11,12 @@ interface AnchorModalProps {
 }
 
 export default function AnchorModal({ onClose, onSuccess }: AnchorModalProps) {
+  const { submission, walletAddress } = useApp();
   const [step, setStep] = useState<'confirm' | 'signing' | 'pending'>('confirm');
+
+  const subId     = submission?.id       ? submission.id.slice(-8).toUpperCase() : 'A882EF9B';
+  const foodName  = submission?.foodName || 'Mushroom Image Set';
+  const wallet    = walletAddress ? truncateAddress(walletAddress) : '0xfdbF...D089';
 
   const handleConfirm = () => {
     setStep('signing');
@@ -35,12 +42,19 @@ export default function AnchorModal({ onClose, onSuccess }: AnchorModalProps) {
             Your contribution will be permanently recorded on-chain.
           </p>
 
-          {/* Fee breakdown */}
+          {/* Submission info */}
           <div className="bg-[#F9FAFB] rounded-xl p-4 mb-3 space-y-3 border border-[#F1F3F5]">
-            {/* Asset */}
             <div className="flex justify-between text-sm">
-              <span className="text-[#9CA3AF]">Asset</span>
-              <span className="text-[#111827] font-semibold">Food-Science-Asset-42</span>
+              <span className="text-[#9CA3AF]">Submission</span>
+              <div className="text-right">
+                <p className="text-[#111827] font-semibold">{foodName}</p>
+                <p className="text-[10px] font-mono text-[#9CA3AF]">#{subId}</p>
+              </div>
+            </div>
+
+            <div className="flex justify-between text-sm border-t border-[#F1F3F5] pt-3">
+              <span className="text-[#9CA3AF]">Contributor</span>
+              <span className="text-[#111827] font-mono text-xs">{wallet}</span>
             </div>
 
             {/* Gas Fee — ETH crossed out → 0 XNY */}
