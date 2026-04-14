@@ -14,12 +14,14 @@ export default function WalletModal({ onClose }: { onClose: () => void }) {
     inviterCode: '',
   };
 
-  // Matches Frontier's auth-modal.tsx exactly
-  async function handleLogin(res: { token: string; old_token?: string; user_id: string; new_user: boolean }) {
+  // Don't await async ops — CodattaSignin waits for this callback to return before
+  // dismissing its loading state. Fire-and-forget loginWithResponse so UI unblocks immediately.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function handleLogin(res: any) {
     localStorage.setItem('token', res.old_token || '');
     localStorage.setItem('uid', res.user_id);
     localStorage.setItem('auth', res.token);
-    await loginWithResponse(res);
+    loginWithResponse(res); // fire and forget
     onClose();
   }
 
