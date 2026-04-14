@@ -11,7 +11,7 @@ import { useApp } from '@/context/AppContext';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { formatDate } from '@/lib/utils';
+import { formatDate, truncateAddress } from '@/lib/utils';
 
 
 // ── Hover Popover ─────────────────────────────────────────────────────────────
@@ -32,8 +32,16 @@ function HoverPopover({ children, content, align = 'left', direction = 'down' }:
 
 // ── Identity Chip ─────────────────────────────────────────────────────────────
 function IdentityChip({ handle, role, did, wallet }: { handle: string; role?: string; did?: string; wallet?: string }) {
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const copyField = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 1500);
+  };
+  const truncateDid = (d: string) => d.length <= 28 ? d : d.slice(0, 22) + '…' + d.slice(-4);
+
   const card = (
-    <div className="bg-white rounded-xl p-4 w-56 text-left border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+    <div className="bg-white rounded-xl p-4 w-60 text-left border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
       <div className="flex items-center gap-3 mb-3">
         <div className="w-8 h-8 rounded-full bg-[rgba(255,168,0,0.10)] flex items-center justify-center shrink-0">
           <User className="w-4 h-4 text-[#FFA800]" />
@@ -43,8 +51,28 @@ function IdentityChip({ handle, role, did, wallet }: { handle: string; role?: st
           {role && <p className="text-[10px] text-[#9CA3AF]">{role}</p>}
         </div>
       </div>
-      {did && <div className="mb-2"><p className="text-[9px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-0.5">DID</p><p className="text-[10px] font-mono text-[#FFA800] break-all">{did}</p></div>}
-      {wallet && <div><p className="text-[9px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-0.5">Wallet</p><p className="text-[10px] font-mono text-[#6B7280]">{wallet}</p></div>}
+      {did && (
+        <div className="mb-2">
+          <p className="text-[9px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-0.5">DID</p>
+          <div className="flex items-center gap-1">
+            <p className="text-[10px] font-mono text-[#FFA800] flex-1 min-w-0 truncate">{truncateDid(did)}</p>
+            <button onClick={() => copyField(did, 'did')} className="shrink-0 p-1 rounded hover:bg-gray-100 transition-colors">
+              {copiedField === 'did' ? <CheckCircle2 className="w-3 h-3 text-[#22C55E]" /> : <Copy className="w-3 h-3 text-[#9CA3AF]" />}
+            </button>
+          </div>
+        </div>
+      )}
+      {wallet && (
+        <div>
+          <p className="text-[9px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-0.5">Wallet</p>
+          <div className="flex items-center gap-1">
+            <p className="text-[10px] font-mono text-[#6B7280] flex-1 min-w-0 truncate">{truncateAddress(wallet)}</p>
+            <button onClick={() => copyField(wallet, 'wallet')} className="shrink-0 p-1 rounded hover:bg-gray-100 transition-colors">
+              {copiedField === 'wallet' ? <CheckCircle2 className="w-3 h-3 text-[#22C55E]" /> : <Copy className="w-3 h-3 text-[#9CA3AF]" />}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
   return (
@@ -264,7 +292,8 @@ export default function DataLineage() {
   const subDate = submission?.submittedAt
     ? formatDate(submission.submittedAt) + ' ' + new Date(submission.submittedAt).toTimeString().slice(0, 5)
     : '2025-11-20 14:32';
-  const walletAddr = walletAddress || '0x3a4f...9c21';
+  const walletFull = walletAddress || '0xfdbF0b002bea11E54250993E1298127Ad2CDD089';
+  const walletAddr = truncateAddress(walletFull);
 
   return (
     <main className="pt-24 pb-20 bg-[#F5F5F5]">
@@ -334,7 +363,7 @@ export default function DataLineage() {
                 </div>
                 <p className="text-sm text-[#070707]">
                   Contributor{' '}
-                  <IdentityChip handle={walletAddr} role="Contributor" did="did:codatta:contributor" wallet={walletAddr} />{' '}
+                  <IdentityChip handle={walletAddr} role="Contributor" did="did:codatta:contributor_sub_882aef9b4c" wallet={walletFull} />{' '}
                   submitted to <span className="text-[#6B7280]">Nutritional Analysis · Image 2 Text</span>
                 </p>
               </div>
