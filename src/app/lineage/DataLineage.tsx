@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FileText, CheckCircle2, Link2, Package, Globe,
@@ -15,10 +15,33 @@ import { formatDate, truncateAddress } from '@/lib/utils';
 
 
 // ── Hover Popover ─────────────────────────────────────────────────────────────
-function HoverPopover({ children, content, align = 'left', direction = 'down' }: { children: React.ReactNode; content: React.ReactNode; align?: 'left' | 'right'; direction?: 'up' | 'down' }) {
+function HoverPopover({ children, content, align = 'left', direction = 'down', sticky = false }: {
+  children: React.ReactNode; content: React.ReactNode;
+  align?: 'left' | 'right'; direction?: 'up' | 'down';
+  sticky?: boolean; // hover opens, click-outside closes
+}) {
   const [show, setShow] = useState(false);
+  const wrapRef = useRef<HTMLSpanElement>(null);
+
+  // sticky mode: close on outside click
+  useEffect(() => {
+    if (!sticky || !show) return;
+    const handler = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setShow(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [sticky, show]);
+
   return (
-    <span className="relative inline-block" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+    <span
+      ref={wrapRef}
+      className="relative inline-block"
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={sticky ? undefined : () => setShow(false)}
+    >
       {children}
       {show && (
         <div className={`absolute ${direction === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'} z-50 ${align === 'right' ? 'right-0' : 'left-0'}`}
@@ -145,7 +168,7 @@ function AssetChip({ name, assetId, onViewMore }: { name: string; assetId: strin
         </div>
         {onViewMore && (
           <button
-            onMouseDown={(e) => { e.preventDefault(); onViewMore(); }}
+            onClick={onViewMore}
             className="w-full text-center text-[10px] font-bold text-[#FDA829] hover:text-[#E89B20] pt-2 border-t border-gray-100 flex items-center justify-center gap-1 transition-colors">
             View All {ASSET_CONTRIBUTORS.length} Contributors <ArrowRight className="w-3 h-3" />
           </button>
@@ -154,8 +177,8 @@ function AssetChip({ name, assetId, onViewMore }: { name: string; assetId: strin
     </div>
   );
   return (
-    <HoverPopover content={popover} direction="up">
-      <span className="px-3 py-1 rounded-xl border border-[rgba(255,168,0,0.30)] bg-[rgba(255,168,0,0.08)] text-[#FDA829] text-xs font-bold cursor-default hover:bg-[rgba(255,168,0,0.12)] transition-all inline-flex items-center gap-1.5">
+    <HoverPopover content={popover} direction="up" sticky>
+      <span className="px-3 py-1 rounded-xl border border-[rgba(255,168,0,0.30)] bg-[rgba(255,168,0,0.08)] text-[#FDA829] text-xs font-bold cursor-pointer hover:bg-[rgba(255,168,0,0.12)] transition-all inline-flex items-center gap-1.5">
         <Package className="w-3 h-3" />{name}
       </span>
     </HoverPopover>
