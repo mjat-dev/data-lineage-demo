@@ -1,13 +1,6 @@
 import { CodattaSignin } from 'codatta-connect';
 import { useApp } from '@/context/AppContext';
 
-interface LoginResponse {
-  token: string;
-  old_token?: string;
-  user_id: string;
-  new_user: boolean;
-}
-
 export default function WalletModal({ onClose }: { onClose: () => void }) {
   const { loginWithResponse, isLoggedIn } = useApp();
 
@@ -21,7 +14,11 @@ export default function WalletModal({ onClose }: { onClose: () => void }) {
     inviterCode: '',
   };
 
-  async function handleLogin(res: LoginResponse) {
+  // Matches Frontier's auth-modal.tsx exactly
+  async function handleLogin(res: { token: string; old_token?: string; user_id: string; new_user: boolean }) {
+    localStorage.setItem('token', res.old_token || '');
+    localStorage.setItem('uid', res.user_id);
+    localStorage.setItem('auth', res.token);
     await loginWithResponse(res);
     onClose();
   }

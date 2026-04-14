@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { CodattaConnectContextProvider } from 'codatta-connect'
+import 'codatta-connect/dist/codatta-connect.css'
 import { defineChain } from 'viem'
 import './styles/globals.css'
 import App from './App.tsx'
