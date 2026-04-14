@@ -30,8 +30,8 @@ const NEXT_STEP_CONFIG: Record<string, NextStepConfig> = {
   submitted:  { label: '待审核',   sublabel: 'Pending Validate',      variant: 'gray',   isUserAction: false },
   validated:  { label: '待上链',   sublabel: 'Anchor On-Chain',       variant: 'orange', isUserAction: true  },
   packaged:   { label: '待上链',   sublabel: 'Anchor On-Chain',       variant: 'orange', isUserAction: true  },
-  anchored:   { label: '待打包',   sublabel: 'Pending Packaging',      variant: 'blue',   isUserAction: false },
-  assetified: { label: '待发布',   sublabel: 'Pending Publish',       variant: 'blue',   isUserAction: false },
+  anchored:   { label: '待发布',   sublabel: 'Pending Publish',        variant: 'blue',   isUserAction: false },
+  assetified: { label: '待发布',   sublabel: 'Pending Publish',        variant: 'blue',   isUserAction: false },
   published:  { label: '已完成',   sublabel: 'Published',             variant: 'green',  isUserAction: false },
 };
 
