@@ -1,39 +1,73 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FileUp, BadgeCheck, Link2, Coins, Wallet, ArrowRight, Inbox } from 'lucide-react';
+import { FileUp, BadgeCheck, Link2, Coins, Wallet, ArrowRight, Inbox, Loader2 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { getSubmissionStats, getSubmissionList, type SubmissionStats, type SubmissionRecord } from '@/lib/api';
 
 export default function Dashboard() {
-  const { isLoggedIn, submission, anchored } = useApp();
+  const { isLoggedIn } = useApp();
+  const [stats, setStats] = useState<SubmissionStats | null>(null);
+  const [records, setRecords] = useState<SubmissionRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    setLoading(true);
+    Promise.all([
+      getSubmissionStats().catch(() => null),
+      getSubmissionList({ pageNum: 1, pageSize: 20 }).catch(() => ({ list: [], total: 0 })),
+    ]).then(([s, r]) => {
+      if (s) setStats(s);
+      setRecords(r.list);
+    }).finally(() => setLoading(false));
+  }, [isLoggedIn]);
+
+  const totalRewardStr = stats?.total_rewards?.map(r => `${r.reward_amount} ${r.reward_type}`).join(', ') || '—';
 
   const statCards = [
     {
       label: 'Total Submissions',
-      value: submission ? '1' : '—',
+      value: stats ? String(stats.all_count) : '—',
       icon: FileUp,
-      delta: submission ? '1 qualified' : 'Connect wallet to view',
+      delta: stats ? `${stats.total_submissions} qualified` : 'Connect wallet to view',
     },
     {
       label: 'Validated',
-      value: submission ? '1' : '—',
+      value: stats ? String(stats.total_submissions) : '—',
       icon: BadgeCheck,
-      delta: submission ? '+12.00 Points' : '—',
+      delta: stats ? `${stats.all_count - stats.total_submissions} pending` : '—',
     },
     {
       label: 'Anchored On-chain',
-      value: anchored ? '1' : '—',
+      value: stats ? String(stats.on_chained) : '—',
       icon: Link2,
-      delta: anchored ? 'Token minted · ERC-1155' : 'Pending anchor',
+      delta: stats?.on_chained ? 'Token minted' : 'Pending anchor',
     },
     {
       label: 'Reward',
-      value: submission ? '+12.00' : '—',
+      value: stats ? totalRewardStr : '—',
       icon: Coins,
-      delta: submission ? 'Points earned' : 'No rewards yet',
+      delta: stats?.claimable_rewards?.length ? 'Claimable' : 'No claimable rewards',
     },
   ];
+
+  const statusMap: Record<string, string> = {
+    submitted: 'Submitted',
+    validated: 'Validated',
+    packaged: 'Packaged',
+    anchored: 'Anchored',
+    assetified: 'Assetified',
+    published: 'Published',
+  };
+
+  const statusVariant = (s: string): 'orange' | 'blue' | 'gray' => {
+    if (s === 'anchored' || s === 'assetified' || s === 'published') return 'orange';
+    if (s === 'validated' || s === 'packaged') return 'blue';
+    return 'gray';
+  };
 
   return (
     <main className="pt-24 pb-20">
@@ -73,7 +107,12 @@ export default function Dashboard() {
               </div>
               <p className="text-[#9CA3AF] text-sm">Connect your wallet to see submissions.</p>
             </Card>
-          ) : !submission ? (
+          ) : loading ? (
+            <Card className="p-12 flex flex-col items-center gap-4 text-center">
+              <Loader2 className="w-8 h-8 text-[#FFA800] animate-spin" />
+              <p className="text-[#9CA3AF] text-sm">Loading submissions...</p>
+            </Card>
+          ) : records.length === 0 ? (
             <Card className="p-12 flex flex-col items-center gap-4 text-center">
               <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
                 <Inbox className="w-8 h-8 text-gray-300" />
@@ -85,34 +124,41 @@ export default function Dashboard() {
             </Card>
           ) : (
             <div className="space-y-3">
-              <Link to="/lineage">
-                <Card hover className="p-6 group">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-[rgba(255,168,0,0.10)] flex items-center justify-center shrink-0">
-                        <FileUp className="w-5 h-5 text-[#FFA800]" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-bold text-sm text-[#070707]">{submission.foodName}</span>
-                          <span className="text-[9px] font-mono text-[#9CA3AF]">{submission.id.slice(-8)}</span>
+              {records.map((record) => (
+                <Link key={record.submission_id} to="/lineage">
+                  <Card hover className="p-6 group">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-[rgba(255,168,0,0.10)] flex items-center justify-center shrink-0">
+                          <FileUp className="w-5 h-5 text-[#FFA800]" />
                         </div>
-                        <p className="text-xs text-[#6B7280]">Food Science · {submission.cookingMethod}</p>
-                        <p className="text-[10px] text-[#9CA3AF] mt-0.5 font-mono">
-                          {new Date(submission.submittedAt).toLocaleString()}
-                        </p>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-sm text-[#070707]">{record.frontier_name || 'Food Science'}</span>
+                            <span className="text-[9px] font-mono text-[#9CA3AF]">{record.submission_id.slice(-8)}</span>
+                          </div>
+                          <p className="text-xs text-[#6B7280]">
+                            {record.task_type_name || 'Contribute'} · {record.reward_show_name || '—'}
+                          </p>
+                          <p className="text-[10px] text-[#9CA3AF] mt-0.5 font-mono">
+                            {record.create_time ? new Date(record.create_time * 1000).toLocaleString() : '—'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <Badge variant={statusVariant(record.current_status)}>
+                          {statusMap[record.current_status] || record.current_status}
+                        </Badge>
+                        {record.chain_status === 2 && (
+                          <Badge variant="orange">On-chain</Badge>
+                        )}
+                        <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-[#FFA800] transition-colors" />
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-4">
-                      <Badge variant={anchored ? 'orange' : 'gray'}>
-                        {anchored ? 'Anchored' : 'Submitted'}
-                      </Badge>
-                      <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-[#FFA800] transition-colors" />
-                    </div>
-                  </div>
-                </Card>
-              </Link>
+                  </Card>
+                </Link>
+              ))}
             </div>
           )}
         </section>

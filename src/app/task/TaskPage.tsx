@@ -3,8 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, CloudUpload, Image, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Card } from '@/components/ui/Card';
-// TODO: re-enable during API 联调
-// import { uploadFile, submitTask } from '@/lib/api';
+import { uploadFile, submitTask } from '@/lib/api';
 import WalletModal from '@/components/WalletModal';
 
 export default function TaskPage() {
@@ -33,29 +32,39 @@ export default function TaskPage() {
 
   const formFilled = !!(foodImage && foodName.trim() && foodWeight.trim() && cookingMethod.trim() && calories.trim());
 
-  // Demo mode: skip real API calls, save locally and navigate.
-  // TODO: Replace with real uploadFile + submitTask during API 联调.
   const doSubmit = async () => {
     setSubmitting(true);
     setError(null);
     try {
-      // Simulate brief upload delay
-      await new Promise(r => setTimeout(r, 800));
+      // 1. Upload image
+      const imageUrl = await uploadFile(foodImage!);
 
-      const fakeImageUrl = foodImage ? URL.createObjectURL(foodImage) : '';
+      // 2. Submit task data
+      const result = await submitTask({
+        taskId,
+        templateId,
+        data: {
+          food_name: foodName.trim(),
+          food_weight: foodWeight.trim(),
+          cooking_method: cookingMethod.trim(),
+          calories: calories.trim(),
+          food_image: imageUrl,
+        },
+      });
 
+      // 3. Save to context for Dashboard display
       setSubmission({
-        id: `demo_${Date.now()}`,
+        id: result.submission_id,
         foodName: foodName.trim(),
         foodWeight: foodWeight.trim(),
         cookingMethod: cookingMethod.trim(),
         calories: calories.trim(),
         foodImageName: foodImage!.name,
-        foodImageUrl: fakeImageUrl,
+        foodImageUrl: imageUrl,
         submittedAt: new Date().toISOString(),
         taskId,
         templateId,
-        status: 'submitted',
+        status: result.status || 'submitted',
       });
 
       navigate('/profile');

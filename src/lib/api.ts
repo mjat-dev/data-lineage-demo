@@ -168,19 +168,30 @@ export async function getSubmissionList(params?: {
   pageNum?: number;
   pageSize?: number;
 }): Promise<{ list: SubmissionRecord[]; total: number }> {
-  const raw = await request<{ data: SubmissionRecord[]; total_count: number }>('POST', '/api/v2/submission/list', {
-    channel: 'demo',
-    page_num: params?.pageNum ?? 1,
-    page_size: params?.pageSize ?? 20,
-    task_types: 'submission',
-    current_status: params?.currentStatus ?? '',
-  }) as unknown as { list?: SubmissionRecord[]; total_count?: number } & SubmissionRecord[];
+  // The API wraps response as { data: [...records], total_count, total_page, page, success, ... }
+  // Our request() helper already unwraps .data, so we get the array directly.
+  const token = getToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['token'] = token;
 
-  // API returns array directly at data level
-  if (Array.isArray(raw)) {
-    return { list: raw as unknown as SubmissionRecord[], total: (raw as unknown as SubmissionRecord[]).length };
-  }
-  return { list: (raw as unknown as { data?: SubmissionRecord[] }).data ?? [], total: (raw as unknown as { total_count?: number }).total_count ?? 0 };
+  const res = await fetch(`${BASE_URL}/api/v2/submission/list`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      channel: 'demo',
+      page_num: params?.pageNum ?? 1,
+      page_size: params?.pageSize ?? 20,
+      task_types: 'submission',
+      current_status: params?.currentStatus ?? '',
+    }),
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.errorMessage || 'API error');
+
+  // data is the records array, total_count is at the top level
+  const list: SubmissionRecord[] = Array.isArray(json.data) ? json.data : [];
+  const total = json.total_count ?? list.length;
+  return { list, total };
 }
 
 export interface TaskSubmitResult {
@@ -229,6 +240,32 @@ export async function uploadFile(file: File): Promise<string> {
   const json = await res.json();
   if (!json.success) throw new Error(json.errorMessage || 'Upload failed');
   return json.data.file_path as string;
+}
+
+// ── Chain Submit ─────────────────────────────────────────────────────────────
+
+export interface ChainSubmitResult {
+  chain_status: number; // 1 success, 0 fail
+}
+
+export async function submitChainData(params: {
+  submissionId: string;
+  status: number; // 1 进行中, 2 已完成, 3 失败
+  address: string;
+  txHash: string;
+  chainId?: string;
+  blockNumber?: string;
+  fingerprint?: string;
+}): Promise<ChainSubmitResult> {
+  return request<ChainSubmitResult>('POST', '/api/v2/submission/chain/submit', {
+    submission_id: params.submissionId,
+    status: params.status,
+    address: params.address,
+    tx_hash: params.txHash,
+    chain_id: params.chainId ?? '',
+    block_number: params.blockNumber ?? '',
+    fingerprint: params.fingerprint ?? '',
+  });
 }
 
 // ── Token helpers ─────────────────────────────────────────────────────────────
