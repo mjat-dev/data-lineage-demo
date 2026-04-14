@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FileText, CheckCircle2, Link2, Package, Globe,
-  User, ChevronDown, Plus, Sparkles,
+  User, ChevronDown, Plus, Sparkles, Coins,
   Store, History, PieChart, ArrowRight, ExternalLink,
   X, AlertTriangle, Info, Copy, GitBranch,
 } from 'lucide-react';
@@ -413,15 +413,13 @@ export default function DataLineage() {
                     </div>
 
                     <div className="flex items-center justify-between border-t border-gray-200 pt-5">
-                      <div className="space-y-1">
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-[10px] font-bold uppercase text-[#9CA3AF]">Service Fee</span>
-                          <span className="font-bold text-[#FFA800]">450 XNY</span>
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-[#FDA829]" />
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-[#9CA3AF] line-through font-mono">~0.0002 ETH</span>
+                          <span className="text-sm font-bold text-[#5DDD22]">0 XNY</span>
                         </div>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-[10px] font-bold uppercase text-[#9CA3AF]">Network Fee</span>
-                          <span className="text-sm font-mono text-[#6B7280]">~0.0002 ETH</span>
-                        </div>
+                        <span className="text-[10px] text-[#9CA3AF]">Gas sponsored by platform</span>
                       </div>
                       <Button variant="primary" size="lg" onClick={() => setShowAnchorModal(true)}>
                         Start Anchoring →
@@ -509,31 +507,30 @@ export default function DataLineage() {
                   {/* Pipeline steps — all completed */}
                   <div className="bg-gray-50 border border-[rgba(34,197,94,0.15)] rounded-xl p-4">
                     <p className="text-[10px] font-bold uppercase text-[#9CA3AF] tracking-wider mb-3">Assetification Pipeline · Completed</p>
-                    <div className="space-y-3 text-xs mb-4">
+                    <div className="space-y-2 text-xs mb-4">
                       {[
-                        { step: '①', label: 'Frontier dataset bundled on-chain', tx: '0xd94e...7f3a', link: 'https://etherscan.io/tx/0xd94e' },
-                        { step: '②', label: 'Dataset uploaded to HuggingFace', tx: 'v1.0.2 · MM-Food-100K', link: 'https://huggingface.co/datasets/Codatta/MM-Food-100K' },
-                        { step: '③', label: 'Version hash recorded on-chain', tx: '0x8b2c...f41a', link: 'https://etherscan.io/tx/0x8b2c' },
-                      ].map(({ step, label, tx, link }) => (
-                        <div key={step} className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E] shrink-0" />
-                            <span className="text-[#070707]">{step} {label}</span>
-                          </div>
-                          <a href={link} target="_blank" rel="noopener noreferrer"
-                            className="font-mono text-[#FFA800] hover:underline flex items-center gap-1 shrink-0 text-[10px]">
-                            {tx} <ExternalLink className="w-3 h-3" />
-                          </a>
+                        'Frontier dataset bundled on-chain',
+                        'Dataset uploaded to HuggingFace',
+                        'Version hash recorded on-chain',
+                      ].map((label) => (
+                        <div key={label} className="flex items-center gap-2.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E] shrink-0" />
+                          <span className="text-[#070707]">{label}</span>
                         </div>
                       ))}
                     </div>
-                    <div className="border-t border-gray-100 pt-3 flex items-center justify-between text-xs">
-                      <span className="text-[#9CA3AF]">HuggingFace Version</span>
-                      <span className="font-bold text-[#070707] font-mono">v1.0.2</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs mt-2">
-                      <span className="text-[#9CA3AF]">On-chain Version Hash</span>
-                      <span className="font-mono text-[#6B7280]">0x8b2c...f41a</span>
+                    <div className="border-t border-gray-100 pt-3 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-[#9CA3AF]">On-chain Tx</span>
+                        <a href="https://etherscan.io/tx/0xd94e" target="_blank" rel="noopener noreferrer"
+                          className="font-mono text-[#FDA829] hover:underline flex items-center gap-1 text-[10px]">
+                          0xd94e...7f3a <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-[#9CA3AF]">HuggingFace Version</span>
+                        <span className="font-bold text-[#070707] font-mono">v1.0.2</span>
+                      </div>
                     </div>
                   </div>
                   <p className="text-[11px] text-[#9CA3AF] italic">Hover the asset chip to view dataset composition and ownership summary.</p>
@@ -588,14 +585,12 @@ export default function DataLineage() {
                     <div className="space-y-8 relative pl-6 border-l border-gray-200">
                       {[
                         ...(anchored ? [
-                          { id: 'you-mint', time: '2025-11-25 11:30', type: 'Mint', title: 'ERC-1155 tokens minted to You', desc: 'Your 65 ownership tokens minted to your wallet.', from: null, to: '@chef_kenshiro (You)', share: '65 tokens', tx: '0xd94e...7f3a', highlight: true, claimable: false },
-                          { id: 'val-mint', time: '2025-11-26 09:00', type: 'Mint', title: 'Validator share minted', desc: 'Protocol validator share minted. 25 tokens.', from: null, to: 'Protocol Validator', share: '25 tokens', tx: '0x3d82...a01c', highlight: false, claimable: false },
-                          { id: 'treasury-mint', time: '2025-11-26 09:00', type: 'Mint', title: 'Treasury share minted', desc: 'Protocol treasury share. 10 tokens.', from: null, to: 'Protocol Treasury', share: '10 tokens', tx: '0x3d82...a01c', highlight: false, claimable: false },
-                          { id: 'backer-a', time: '2025-11-27 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@alpha_backer', to: 'Backer A', share: '10 tokens', tx: '0xa13f...92bd', highlight: false, claimable: false },
-                          { id: 'backer-b', time: '2025-11-28 09:42', type: 'Transfer', title: 'Backer B purchased 5 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@alpha_backer', to: 'Backer B', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false, claimable: false },
+                          { id: 'you-mint', time: '2025-11-25 11:30', type: 'Mint', title: 'ERC-1155 tokens minted to You', desc: 'Your 65 ownership tokens minted to your wallet.', from: null, to: '@chef_kenshiro (You)', share: '65 tokens', tx: '0xd94e...7f3a', highlight: true },
+                          { id: 'backer-a', time: '2025-11-27 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@alpha_backer', to: 'Backer A', share: '10 tokens', tx: '0xa13f...92bd', highlight: false },
+                          { id: 'backer-b', time: '2025-11-28 09:42', type: 'Transfer', title: 'Backer B purchased 5 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@alpha_backer', to: 'Backer B', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false },
                         ] : [
-                          { id: 'backer-a-pre', time: '2025-11-23 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 direct transfer via wallet. You cannot trade your share until you anchor on-chain.', from: '@other_contributor', to: 'Backer A', share: '10 tokens', tx: '0xa13f...92bd', highlight: false, claimable: false },
-                          { id: 'backer-b-pre', time: '2025-11-24 09:42', type: 'Transfer', title: 'Backer B purchased 5 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@other_contributor', to: 'Backer B', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false, claimable: false },
+                          { id: 'backer-a-pre', time: '2025-11-23 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 direct transfer via wallet. You cannot trade your share until you anchor on-chain.', from: '@other_contributor', to: 'Backer A', share: '10 tokens', tx: '0xa13f...92bd', highlight: false },
+                          { id: 'backer-b-pre', time: '2025-11-24 09:42', type: 'Transfer', title: 'Backer B purchased 5 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@other_contributor', to: 'Backer B', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false },
                         ]),
                       ].map((evt) => (
                         <div key={evt.id} className="relative">
@@ -613,6 +608,14 @@ export default function DataLineage() {
                               <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Share</span><span className="font-bold text-[#111827]">{evt.share}</span></div>
                               {evt.tx && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Tx Hash</span><a href={`https://etherscan.io/tx/${evt.tx}`} target="_blank" rel="noopener noreferrer" className="text-[#3474FE] hover:underline flex items-center gap-1">{evt.tx} <ExternalLink className="w-3 h-3" /></a></div>}
                             </div>
+                            {/* Prominent claim button for user's own mint */}
+                            {evt.id === 'you-mint' && (
+                              <a href="https://basescan.org/address/0xfdbf" target="_blank" rel="noopener noreferrer"
+                                className="mt-1 w-full py-2.5 bg-[#FDA829] hover:bg-[#E89B20] active:bg-[#D08A10] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-colors">
+                                <Coins className="w-4 h-4" />
+                                Claim My 65 Tokens →
+                              </a>
+                            )}
                           </div>
                         </div>
                       ))}
