@@ -22,14 +22,25 @@ interface LoginResponse {
   new_user: boolean;
 }
 
+export function shortenAddress(address: string, len = 12): string {
+  if (!address) return '';
+  if (address.length <= len) return address;
+  const half = Math.floor(len / 2);
+  return `${address.slice(0, half + 2)}...${address.slice(-half)}`;
+}
+
 interface AppContextType {
   // Auth
   walletAddress: string | null;
   walletType: string | null;
   userInfo: UserInfo | null;
   isLoggedIn: boolean;
+  authLoading: boolean;
+  showLoginModal: boolean;
+  setShowLoginModal: (v: boolean) => void;
   loginWithResponse: (res: LoginResponse) => Promise<void>;
   disconnectWallet: () => void;
+  displayName: string;
 
   // Submission
   submission: Submission | null;
@@ -48,8 +59,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [anchored, setAnchored] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
-  // Re-hydrate if token exists (page refresh)
+  // Check login status on mount; show login modal if not logged in
   useEffect(() => {
     if (hasToken()) {
       getUserInfo().then(info => {
@@ -61,7 +74,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       }).catch(() => {
         clearToken();
+        setShowLoginModal(true);
+      }).finally(() => {
+        setAuthLoading(false);
       });
+    } else {
+      setAuthLoading(false);
+      setShowLoginModal(true);
     }
   }, []);
 
@@ -76,9 +95,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setWalletAddress(account.account);
         setWalletType(account.wallet_name);
       }
+      setShowLoginModal(false);
     } catch {
-      // If getUserInfo fails, still set basic info from token
       setWalletAddress(res.user_id);
+      setShowLoginModal(false);
     }
   };
 
@@ -89,9 +109,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUserInfo(null);
     setSubmission(null);
     setAnchored(false);
+    setShowLoginModal(true);
   };
 
   const isLoggedIn = !!walletAddress;
+
+  // Display masked wallet address, fallback to user_name or truncated user_id
+  const displayName = (() => {
+    if (!userInfo) return walletAddress ? shortenAddress(walletAddress) : '';
+    const account = userInfo.accounts_data.find(a => a.current_account);
+    if (account?.account) return shortenAddress(account.account);
+    if (userInfo.user_data.user_name) return userInfo.user_data.user_name;
+    return shortenAddress(userInfo.user_data.user_id);
+  })();
 
   return (
     <AppContext.Provider value={{
@@ -99,8 +129,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       walletType,
       userInfo,
       isLoggedIn,
+      authLoading,
+      showLoginModal,
+      setShowLoginModal,
       loginWithResponse,
       disconnectWallet,
+      displayName,
       submission,
       setSubmission,
       anchored,

@@ -92,7 +92,7 @@ export interface UserInfo {
 }
 
 export async function getUserInfo(): Promise<UserInfo> {
-  return request<UserInfo>('GET', '/api/v2/user/get/user_info');
+  return request<UserInfo>('POST', '/api/v2/user/get/user_info');
 }
 
 // ── Frontier ──────────────────────────────────────────────────────────────────

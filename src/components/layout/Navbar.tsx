@@ -7,8 +7,7 @@ import WalletModal from '@/components/WalletModal';
 
 export default function Navbar() {
   const location = useLocation();
-  const { walletAddress, disconnectWallet } = useApp();
-  const [showWalletModal, setShowWalletModal] = useState(false);
+  const { isLoggedIn, displayName, disconnectWallet, showLoginModal, setShowLoginModal } = useApp();
   const [showDisconnect, setShowDisconnect] = useState(false);
 
   const navItems = [
@@ -54,7 +53,7 @@ export default function Navbar() {
           </div>
 
           {/* Wallet */}
-          {walletAddress ? (
+          {isLoggedIn ? (
             <div className="relative">
               <button
                 onClick={() => setShowDisconnect(v => !v)}
@@ -63,7 +62,7 @@ export default function Navbar() {
                 <div className="w-6 h-6 rounded-full bg-[rgba(255,168,0,0.15)] flex items-center justify-center">
                   <User className="w-3 h-3 text-[#FFA800]" />
                 </div>
-                <span className="text-xs font-mono text-[#6B7280]">{walletAddress}</span>
+                <span className="text-xs font-mono text-[#6B7280]">{displayName}</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
               </button>
               {showDisconnect && (
@@ -82,7 +81,7 @@ export default function Navbar() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => setShowWalletModal(true)}
+              onClick={() => setShowLoginModal(true)}
               className="gap-2"
             >
               <Wallet className="w-4 h-4" />
@@ -92,7 +91,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {showWalletModal && <WalletModal onClose={() => setShowWalletModal(false)} />}
+      {showLoginModal && <WalletModal onClose={() => setShowLoginModal(false)} />}
     </>
   );
 }
