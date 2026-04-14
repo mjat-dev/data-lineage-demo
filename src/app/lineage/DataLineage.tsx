@@ -170,9 +170,6 @@ function MetadataDrawer({ onClose }: { onClose: () => void }) {
             { label: 'Storage Type', value: 'IPFS + Codatta Off-chain' },
             { label: 'Object Hash', value: 'Qm3k7...f9a2' },
             { label: 'DID Snapshot', value: 'did:codatta:sub_882...' },
-            { label: 'Binding Status', value: 'Confirmed' },
-            { label: 'Registered At', value: '2025-11-20 14:32 UTC' },
-            { label: 'Protocol Version', value: 'codatta-v0.4' },
           ].map(({ label, value }) => (
             <div key={label} className="bg-gray-50 rounded-xl p-3">
               <p className="text-[9px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-1">{label}</p>
@@ -351,7 +348,6 @@ export default function DataLineage() {
                   className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-medium text-[#070707] transition-colors">
                   <Package className="w-4 h-4 text-[#FFA800]" /> Storage &amp; Metadata
                 </button>
-                <span className="text-[10px] font-mono text-[#9CA3AF]">DID: codatta:sub_882...</span>
               </div>
             </CollapsibleCard>
           </NodeWrapper>
@@ -474,7 +470,6 @@ export default function DataLineage() {
               title="Assetification"
               badge={anchored ? 'Dataset Asset On-chain · v1.0.2' : 'Pending Anchor'}
               badgeVariant={anchored ? 'orange' : 'gray'}
-              timestamp="2025-11-22 10:00"
             >
               {!anchored ? (
                 <div className="space-y-5">
@@ -609,8 +604,6 @@ export default function DataLineage() {
                           { id: 'backer-a', time: '2025-11-27 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@alpha_backer', to: 'Backer A', share: '10 tokens', tx: '0xa13f...92bd', highlight: false, claimable: false },
                           { id: 'backer-b', time: '2025-11-28 09:42', type: 'Transfer', title: 'Backer B purchased 5 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@alpha_backer', to: 'Backer B', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false, claimable: false },
                         ] : [
-                          { id: 'val-mint-pre', time: '2025-11-22 10:00', type: 'Mint', title: 'Validator share minted', desc: 'Protocol validator share minted on-chain.', from: null, to: 'Protocol Validator', share: '25 tokens', tx: '0x3d82...a01c', highlight: false, claimable: false },
-                          { id: 'treasury-mint-pre', time: '2025-11-22 10:00', type: 'Mint', title: 'Treasury share minted', desc: 'Protocol treasury share minted.', from: null, to: 'Protocol Treasury', share: '10 tokens', tx: '0x3d82...a01c', highlight: false, claimable: false },
                           { id: 'backer-a-pre', time: '2025-11-23 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 direct transfer via wallet. You cannot trade your share until you anchor on-chain.', from: '@other_contributor', to: 'Backer A', share: '10 tokens', tx: '0xa13f...92bd', highlight: false, claimable: false },
                           { id: 'backer-b-pre', time: '2025-11-24 09:42', type: 'Transfer', title: 'Backer B purchased 5 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@other_contributor', to: 'Backer B', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false, claimable: false },
                         ]),
