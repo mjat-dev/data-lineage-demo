@@ -57,17 +57,15 @@ export default function Frontier() {
   const [frontiers, setFrontiers] = useState<FrontierItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Try to load real data when logged in; fall back to demo card silently
   useEffect(() => {
     if (!isLoggedIn) {
-      setFrontiers([DEMO_FRONTIER]);
       setLoading(false);
       return;
     }
     setLoading(true);
     getFrontierList()
-      .then(list => setFrontiers(list.length > 0 ? list : [DEMO_FRONTIER]))
-      .catch(() => setFrontiers([DEMO_FRONTIER]))
+      .then(list => setFrontiers(list))
+      .catch(() => setFrontiers([]))
       .finally(() => setLoading(false));
   }, [isLoggedIn]);
 
@@ -131,6 +129,12 @@ export default function Frontier() {
                   </div>
                 </div>
               ))
+            ) : frontiers.length === 0 ? (
+              <div className="col-span-full flex flex-col items-center justify-center py-16 text-gray-400">
+                <Sparkles className="w-10 h-10 mb-3 text-gray-300" />
+                <p className="text-sm font-medium text-gray-500">No frontiers available</p>
+                <p className="text-xs mt-1">Check back later for new tasks</p>
+              </div>
             ) : frontiers.map(f => (
               <div
                 key={f.frontier_id}
