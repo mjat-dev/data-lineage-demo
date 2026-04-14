@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatDate, truncateAddress } from '@/lib/utils';
+import { getSubmissionList } from '@/lib/api';
 
 
 // ── Hover Popover ─────────────────────────────────────────────────────────────
@@ -309,6 +310,15 @@ function _CirculationLog() {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function DataLineage() {
   const { submission, anchored, setAnchored, walletAddress, isLoggedIn } = useApp();
+  const [hasRecords, setHasRecords] = useState<boolean | null>(null); // null = loading
+
+  useEffect(() => {
+    if (!isLoggedIn) { setHasRecords(false); return; }
+    getSubmissionList({ pageNum: 1, pageSize: 1 })
+      .then(r => setHasRecords(r.total > 0))
+      .catch(() => setHasRecords(false));
+  }, [isLoggedIn]);
+
   const [showAnchorModal, setShowAnchorModal] = useState(false);
   const [showAnchorDetails, setShowAnchorDetails] = useState(false);
   const [showMetadata, setShowMetadata] = useState(false);
@@ -386,10 +396,10 @@ export default function DataLineage() {
               <GitBranch className="w-7 h-7 text-gray-300" />
             </div>
             <h2 className="text-xl font-bold text-[#070707] mb-2">No submission selected</h2>
-            {isLoggedIn ? (
+            {hasRecords ? (
               <>
                 <p className="text-sm text-[#9CA3AF] max-w-xs leading-relaxed">
-                  Go to Data Profile, select a submission, and click it to view its lineage here.
+                  Select a submission from Data Profile to view its lineage here.
                 </p>
                 <Link to="/profile" className="mt-6 inline-block px-5 py-2.5 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-sm font-bold transition-colors">
                   View My Submissions →
