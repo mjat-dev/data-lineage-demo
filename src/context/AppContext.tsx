@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
 export interface Submission {
   id: string;
@@ -24,6 +24,25 @@ export function shortenAddress(address: string, len = 12): string {
 // ── Mock demo wallet ──────────────────────────────────────────────────────────
 const DEMO_WALLET = '0xfdbF0b002bea11E54250993E1298127Ad2CDD089';
 
+// ── sessionStorage helpers (clears automatically when tab is closed) ──────────
+const SS_WALLET       = 'demo_wallet';
+const SS_SUBMISSIONS  = 'demo_submissions';
+const SS_ACTIVE_ID    = 'demo_active_id';
+
+function ssGet<T>(key: string, fallback: T): T {
+  try {
+    const raw = sessionStorage.getItem(key);
+    return raw !== null ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+function ssSet(key: string, value: unknown) {
+  try { sessionStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
+}
+function ssDel(key: string) {
+  try { sessionStorage.removeItem(key); } catch { /* ignore */ }
+}
 
 interface AppContextType {
   walletAddress: string | null;
@@ -36,18 +55,12 @@ interface AppContextType {
   disconnectWallet: () => void;
   displayName: string;
 
-  // All submissions (seed + user-added)
   submissions: Submission[];
-  // Currently active submission being viewed in lineage
   submission: Submission | null;
-  // Add a new submission (from TaskPage) and make it active
   setSubmission: (s: Submission) => void;
-  // Set which submission is active for lineage view
   setActiveSubmission: (id: string) => void;
-  // Update status of a specific submission (e.g. after anchoring)
   updateSubmissionStatus: (id: string, status: string) => void;
 
-  // Derived from active submission's status — backward-compat
   anchored: boolean;
   setAnchored: (v: boolean) => void;
 }
@@ -55,12 +68,32 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [submissionsState, setSubmissionsState] = useState<Submission[]>([]);
-  const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
-  const [showLoginModal, setShowLoginModal] = useState(true);
+  // Initialise from sessionStorage so refreshes don't lose data
+  const [walletAddress, setWalletAddress] = useState<string | null>(
+    () => ssGet<string | null>(SS_WALLET, null)
+  );
+  const [submissionsState, setSubmissionsState] = useState<Submission[]>(
+    () => ssGet<Submission[]>(SS_SUBMISSIONS, [])
+  );
+  const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(
+    () => ssGet<string | null>(SS_ACTIVE_ID, null)
+  );
+  const [showLoginModal, setShowLoginModal] = useState(() => !ssGet<string | null>(SS_WALLET, null));
 
-  // Active submission: the one being viewed in lineage
+  // Persist to sessionStorage whenever state changes
+  useEffect(() => {
+    walletAddress ? ssSet(SS_WALLET, walletAddress) : ssDel(SS_WALLET);
+  }, [walletAddress]);
+
+  useEffect(() => {
+    ssSet(SS_SUBMISSIONS, submissionsState);
+  }, [submissionsState]);
+
+  useEffect(() => {
+    activeSubmissionId ? ssSet(SS_ACTIVE_ID, activeSubmissionId) : ssDel(SS_ACTIVE_ID);
+  }, [activeSubmissionId]);
+
+  // Active submission for lineage view
   const submission =
     submissionsState.find(s => s.id === activeSubmissionId) ?? submissionsState[0] ?? null;
 
@@ -75,7 +108,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSubmissionsState(prev => prev.map(s => s.id === id ? { ...s, status } : s));
   };
 
-  // anchored = derived from the active submission's status (no separate boolean needed)
   const anchored = ['anchored', 'assetified', 'published'].includes(submission?.status ?? '');
   const setAnchored = (v: boolean) => {
     if (v && submission) updateSubmissionStatus(submission.id, 'anchored');
@@ -91,6 +123,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSubmissionsState([]);
     setActiveSubmissionId(null);
     setShowLoginModal(true);
+    ssDel(SS_WALLET);
+    ssDel(SS_SUBMISSIONS);
+    ssDel(SS_ACTIVE_ID);
   };
 
   const isLoggedIn = !!walletAddress;
