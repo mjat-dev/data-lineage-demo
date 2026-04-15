@@ -513,7 +513,7 @@ export default function DataLineage() {
           <NodeWrapper icon={Link2} iconActive={anchored}>
             <CollapsibleCard
               title="Anchor on-chain"
-              badge={anchored ? `Anchored${anchorResult ? ' · ' + anchorResult.txHash.slice(0, 6) + '...' + anchorResult.txHash.slice(-4) : ''}` : 'Ready to Anchor'}
+              badge={anchored ? `Anchored${anchorResult?.txHash ? ' · ' + anchorResult.txHash.slice(0, 6) + '...' + anchorResult.txHash.slice(-4) : ''}` : 'Ready to Anchor'}
               badgeVariant={anchored ? 'orange' : 'gray'}
               timestamp="2025-11-21 16:40"
             >
@@ -877,17 +877,17 @@ export default function DataLineage() {
               </div>
               <div>
                 <p className="text-[10px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-1">Chain</p>
-                <p className="text-sm font-bold text-[#070707]">BNB Smart Chain</p>
+                <p className="text-sm font-bold text-[#070707]">Base Sepolia</p>
               </div>
               <div>
                 <p className="text-[10px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-1">Block</p>
                 <p className="text-sm font-bold text-[#070707]">{anchorResult?.blockNumber?.toLocaleString() || '—'}</p>
               </div>
               <div>
-                <p className="text-[10px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-2">Tx hash</p>
+                <p className="text-[10px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-2">Tx Hash</p>
                 <div className="flex items-center gap-2">
                   {anchorResult?.txHash ? (
-                    <a href={`https://bscscan.com/tx/${anchorResult.txHash}`} target="_blank" rel="noopener noreferrer"
+                    <a href={`https://sepolia.basescan.org/tx/${anchorResult.txHash}`} target="_blank" rel="noopener noreferrer"
                       className="font-mono text-sm text-[#FFA800] hover:underline flex items-center gap-1">
                       {anchorResult.txHash.slice(0, 6)}...{anchorResult.txHash.slice(-4)} <ExternalLink className="w-3 h-3" />
                     </a>

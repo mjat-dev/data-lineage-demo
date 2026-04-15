@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { CodattaConnectContextProvider } from 'codatta-connect';
-import { bsc } from 'viem/chains';
+import { baseSepolia } from 'viem/chains';
 import Navbar from '@/components/layout/Navbar';
 import { AppProvider } from '@/context/AppContext';
 import Frontier from '@/app/frontier/Frontier';
@@ -14,7 +14,7 @@ import './styles/codatta-connect-overrides.css';
 
 export default function App() {
   return (
-    <CodattaConnectContextProvider chains={[bsc]} apiBaseUrl="/api">
+    <CodattaConnectContextProvider chains={[baseSepolia]} apiBaseUrl="/api">
       <AppProvider>
         <BrowserRouter>
           <div className="min-h-screen bg-[#F5F5F5]">

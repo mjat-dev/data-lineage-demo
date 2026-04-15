@@ -229,9 +229,22 @@ export async function submitTask(params: {
 export interface ChainSignatureResponse {
   cf_id: string;
   validatorDidId: string;
-  status: string; // e.g. "ADOPT"
-  result: number; // grade, e.g. 5 = S
+  status: string;  // "PENDING" | "ADOPT" | "REJECT" → maps to Verdict enum
+  result: number;  // maps to QualityGrade: 0=NONE, 1=D, 2=C, 3=B, 4=A, 5=S
   signature: string;
+}
+
+// status (string) → Verdict (uint8): 0=PENDING, 1=APPROVED, 2=REJECTED
+const VERDICT_MAP: Record<string, number> = {
+  PENDING: 0,
+  ADOPT: 1,
+  APPROVED: 1,
+  REJECT: 2,
+  REJECTED: 2,
+};
+
+export function statusToVerdict(status: string): number {
+  return VERDICT_MAP[status.toUpperCase()] ?? 0;
 }
 
 export async function getChainSignature(params: {
@@ -294,20 +307,53 @@ export async function submitChainData(params: {
   });
 }
 
-// ── Token helpers ─────────────────────────────────────────────────────────────
+// ── Token helpers (cookie-based for persistent login) ────────────────────────
+
+const TOKEN_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
+
+function setCookie(name: string, value: string, maxAge = TOKEN_MAX_AGE) {
+  document.cookie = `${name}=${encodeURIComponent(value)};path=/;max-age=${maxAge};SameSite=Lax`;
+}
+
+function getCookie(name: string): string {
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+function deleteCookie(name: string) {
+  document.cookie = `${name}=;path=/;max-age=0`;
+}
 
 export function saveToken(res: { token: string; old_token?: string; user_id: string }) {
+  setCookie('auth', res.token);
+  setCookie('uid', res.user_id);
+  if (res.old_token) setCookie('token', res.old_token);
+  // Also keep localStorage for backward compat with request() header
   localStorage.setItem('auth', res.token);
   localStorage.setItem('token', res.old_token || '');
   localStorage.setItem('uid', res.user_id);
 }
 
 export function clearToken() {
+  deleteCookie('auth');
+  deleteCookie('token');
+  deleteCookie('uid');
   localStorage.removeItem('auth');
   localStorage.removeItem('token');
   localStorage.removeItem('uid');
 }
 
 export function hasToken(): boolean {
+  // Check cookie first, fall back to localStorage
+  const cookieToken = getCookie('auth');
+  if (cookieToken) {
+    // Sync to localStorage so request() header picks it up
+    localStorage.setItem('auth', cookieToken);
+    const uid = getCookie('uid');
+    if (uid) localStorage.setItem('uid', uid);
+    const oldToken = getCookie('token');
+    if (oldToken) localStorage.setItem('token', oldToken);
+    return true;
+  }
   return !!localStorage.getItem('auth');
 }

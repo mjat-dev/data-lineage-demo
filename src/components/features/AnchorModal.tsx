@@ -1,20 +1,23 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Link2, CheckCircle2, Clock, ExternalLink, AlertCircle, Sparkles } from 'lucide-react';
-import { ethers } from 'ethers';
+import { useState, useCallback } from 'react';
+import { Link2, CheckCircle2, AlertCircle, Sparkles, ExternalLink } from 'lucide-react';
+import { useCodattaConnectContext } from 'codatta-connect';
+import { checksumAddress } from 'viem';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { getChainSignature, submitChainData } from '@/lib/api';
+import { getChainSignature, submitChainData, statusToVerdict } from '@/lib/api';
+import CFRegistryContract from '@/contracts/cf-registry';
 import {
-  getWalletSigner,
-  getCFRegistryContract,
-  getERC20Contract,
+  publicClient,
+  CHAIN_ID,
+  CHAIN_EXPLORER_URL,
+  CHAIN_NAME,
   encodeSampleData,
   computeContentHash,
-  BSC_EXPLORER_URL,
+  toBytes32,
 } from '@/lib/contracts';
 import { truncateAddress } from '@/lib/utils';
 
-type Step = 'confirm' | 'approving' | 'anchoring' | 'success' | 'error';
+type Step = 'confirm' | 'signing' | 'pending' | 'success' | 'error';
 
 interface AnchorResult {
   txHash: string;
@@ -43,113 +46,86 @@ export default function AnchorModal({
   frontierId,
   contributorDidId,
 }: AnchorModalProps) {
+  const { lastUsedWallet } = useCodattaConnectContext();
   const [step, setStep] = useState<Step>('confirm');
   const [tip, setTip] = useState('');
   const [error, setError] = useState('');
   const [result, setResult] = useState<AnchorResult | null>(null);
 
-  // Fee info loaded from contract
-  const [anchorFee, setAnchorFee] = useState<string>('--');
-  const [feeSymbol, setFeeSymbol] = useState('');
-  const [loadingFee, setLoadingFee] = useState(true);
-
-  // Load anchor fee from contract on mount
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { signer } = await getWalletSigner();
-        const cfRegistry = getCFRegistryContract(signer);
-        const fee: bigint = await cfRegistry.anchorFee();
-        const feeTokenAddr: string = await cfRegistry.anchorFeeToken();
-        const feeToken = getERC20Contract(feeTokenAddr, signer);
-        const [symbol, decimals] = await Promise.all([
-          feeToken.symbol() as Promise<string>,
-          feeToken.decimals() as Promise<bigint>,
-        ]);
-        if (!cancelled) {
-          setAnchorFee(ethers.formatUnits(fee, decimals));
-          setFeeSymbol(symbol);
-        }
-      } catch {
-        if (!cancelled) {
-          setAnchorFee('0');
-          setFeeSymbol('XNY');
-        }
-      } finally {
-        if (!cancelled) setLoadingFee(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
   const handleAnchor = useCallback(async () => {
     try {
-      // Step 1: Get signer
-      setStep('approving');
-      setTip('Connecting wallet...');
-      const { signer } = await getWalletSigner();
-      const signerAddress = await signer.getAddress();
+      if (!lastUsedWallet?.client) throw new Error('Wallet not connected');
+      const address = checksumAddress(lastUsedWallet.address as `0x${string}`);
 
-      // Step 2: Get chain signature from backend
-      setTip('Getting chain signature...');
-      const chainSig = await getChainSignature({
-        submissionId,
-        userDid,
-      });
+      // Step 1: Get chain signature from backend
+      setStep('signing');
+      setTip('Getting validation signature...');
+      const chainSig = await getChainSignature({ submissionId, userDid });
 
-      // Step 3: Read fee info from contract
-      setTip('Reading anchor fee...');
-      const cfRegistry = getCFRegistryContract(signer);
-      const fee: bigint = await cfRegistry.anchorFee();
-      const feeTokenAddr: string = await cfRegistry.anchorFeeToken();
-      const feeToken = getERC20Contract(feeTokenAddr, signer);
-
-      // Step 4: Check allowance and approve if needed
-      const currentAllowance: bigint = await feeToken.allowance(signerAddress, await cfRegistry.getAddress());
-      if (currentAllowance < fee) {
-        setTip('Approve token spending in your wallet...');
-        const approveTx = await feeToken.approve(await cfRegistry.getAddress(), fee);
-        setTip('Waiting for approval confirmation...');
-        await approveTx.wait();
+      // Step 2: Switch chain if needed
+      const chainId = await lastUsedWallet.getChain();
+      if (chainId !== CHAIN_ID) {
+        await lastUsedWallet.switchChain(CHAIN);
       }
 
-      // Step 5: Call submitCFWithValidation
-      setStep('anchoring');
-      setTip('Confirm the anchor transaction in your wallet...');
-      const contentHash = computeContentHash(foodImageUrl);
-      const dataUri = foodImageUrl;
-      const encodedData = encodeSampleData(contentHash, dataUri);
+      // Step 3: Report status=1 (进行中)
+      setTip('Preparing on-chain transaction...');
+      try {
+        await submitChainData({ submissionId, status: 1, address, txHash: '', cfId: chainSig.cf_id, userDid });
+      } catch { /* non-critical */ }
 
-      const tx = await cfRegistry.submitCFWithValidation(
-        contributorDidId,
-        frontierId,
-        0, // SAMPLE
+      // Step 4: Build contract call args
+      const contentHash = computeContentHash(foodImageUrl);
+      const encodedData = encodeSampleData(contentHash, foodImageUrl);
+      const verdict = statusToVerdict(chainSig.status);
+      const grade = chainSig.result;
+      const frontierIdBytes32 = toBytes32(frontierId);
+
+      const args = [
+        BigInt(contributorDidId),
+        frontierIdBytes32,
+        0,  // SAMPLE
         encodedData,
         BigInt(chainSig.validatorDidId),
-        chainSig.result,
-        chainSig.result,
-        chainSig.signature,
-      );
+        verdict,
+        grade,
+        chainSig.signature as `0x${string}`,
+      ] as const;
 
+      // Step 5: Simulate contract call
+      setTip('Simulating transaction...');
+      const { request } = await publicClient.simulateContract({
+        account: address,
+        address: CFRegistryContract.address as `0x${string}`,
+        abi: CFRegistryContract.abi,
+        functionName: 'submitCFWithValidation',
+        args,
+        chain: CFRegistryContract.chain,
+      });
+
+      // Step 6: User signs the transaction
+      setTip('Please confirm the transaction in your wallet...');
+      const txHash = await lastUsedWallet.client.writeContract(request);
+
+      // Step 7: Wait for confirmation
+      setStep('pending');
       setTip('Waiting for transaction confirmation...');
-      const receipt = await tx.wait();
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-      const txHash = receipt.hash;
-      const blockNumber = receipt.blockNumber;
-      const cfId = chainSig.cf_id;
+      const blockNumber = Number(receipt.blockNumber);
+      const txStatus = receipt.status === 'success' ? 2 : 3;
 
-      // Step 6: Report to backend
+      // Step 8: Report to backend
       setTip('Syncing on-chain status...');
       try {
         await submitChainData({
           submissionId,
-          status: 2,
-          address: signerAddress,
+          status: txStatus,
+          address,
           txHash,
-          cfId,
+          cfId: chainSig.cf_id,
           userDid,
-          chainId: '56',
+          chainId: String(CHAIN_ID),
           blockNumber: blockNumber.toString(),
           fingerprint: contentHash,
         });
@@ -157,12 +133,15 @@ export default function AnchorModal({
         console.warn('Failed to sync chain status to backend');
       }
 
-      const anchorResult: AnchorResult = { txHash, cfId, blockNumber };
+      if (txStatus !== 2) throw new Error('Transaction reverted on-chain');
+
+      const anchorResult: AnchorResult = { txHash, cfId: chainSig.cf_id, blockNumber };
       setResult(anchorResult);
       setStep('success');
       onSuccess?.(anchorResult);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Transaction failed';
+      const e = err as { details?: string; message?: string };
+      const msg = e.details || e.message || 'Transaction failed';
       if (msg.includes('user rejected') || msg.includes('User denied') || msg.includes('ACTION_REJECTED')) {
         setError('Transaction was rejected in your wallet.');
       } else {
@@ -170,7 +149,7 @@ export default function AnchorModal({
       }
       setStep('error');
     }
-  }, [submissionId, walletAddress, userDid, foodImageUrl, frontierId, contributorDidId, onSuccess]);
+  }, [submissionId, walletAddress, userDid, foodImageUrl, frontierId, contributorDidId, lastUsedWallet, onSuccess]);
 
   const shortenHash = (hash: string) => {
     if (!hash || hash.length < 12) return hash;
@@ -180,47 +159,35 @@ export default function AnchorModal({
   const wallet = walletAddress ? truncateAddress(walletAddress) : '0x...';
 
   return (
-    <Modal onClose={step === 'approving' || step === 'anchoring' ? () => {} : onClose} className="max-w-md">
-      {/* ── Confirm Step ── */}
+    <Modal onClose={step === 'signing' || step === 'pending' ? () => {} : onClose} className="max-w-md">
+
+      {/* ── Confirm ── */}
       {step === 'confirm' && (
         <>
           <div className="w-12 h-12 rounded-2xl bg-[rgba(253,168,41,0.12)] flex items-center justify-center mb-5">
             <Link2 className="w-6 h-6 text-[#FDA829]" />
           </div>
           <h2 className="text-2xl font-bold mb-2 text-[#111827]">Anchor on-chain</h2>
-          <p className="text-sm text-[#6B7280] mb-6">
-            Your contribution will be permanently recorded on-chain.
-          </p>
+          <p className="text-sm text-[#6B7280] mb-6">Your contribution will be permanently recorded on-chain.</p>
 
-          {/* Submission info */}
           <div className="bg-[#F9FAFB] rounded-xl p-4 mb-3 space-y-3 border border-[#F1F3F5]">
             <div className="flex justify-between text-sm">
               <span className="text-[#9CA3AF]">Contributor</span>
               <span className="text-[#111827] font-mono text-xs">{wallet}</span>
             </div>
-
-            {/* Gas Fee */}
+            <div className="flex justify-between text-sm border-t border-[#F1F3F5] pt-3">
+              <span className="text-[#9CA3AF]">Network</span>
+              <span className="text-[#111827] font-medium">{CHAIN_NAME}</span>
+            </div>
             <div className="flex justify-between items-center text-sm border-t border-[#F1F3F5] pt-3">
               <span className="text-[#9CA3AF]">Gas Fee</span>
-              <div className="flex items-center gap-2">
-                {loadingFee ? (
-                  <span className="text-[#9CA3AF] text-xs">Loading...</span>
-                ) : (
-                  <>
-                    <span className="text-[#9CA3AF] line-through text-xs font-mono">~0.0002 ETH</span>
-                    <span className="text-[#5DDD22] font-bold">{anchorFee} {feeSymbol}</span>
-                  </>
-                )}
-              </div>
+              <span className="text-[#5DDD22] font-bold">Free</span>
             </div>
           </div>
 
-          {/* Gas sponsored tag */}
           <div className="flex items-center gap-2 px-1 mb-5">
             <Sparkles className="w-3.5 h-3.5 text-[#FDA829]" />
-            <p className="text-[11px] text-[#9CA3AF]">
-              Gas fee sponsored by platform · paid in XNY
-            </p>
+            <p className="text-[11px] text-[#9CA3AF]">Gas fee sponsored by platform</p>
           </div>
 
           <div className="flex gap-3">
@@ -230,32 +197,32 @@ export default function AnchorModal({
         </>
       )}
 
-      {/* ── Approving / Anchoring Step ── */}
-      {(step === 'approving' || step === 'anchoring') && (
+      {/* ── Signing / Pending ── */}
+      {(step === 'signing' || step === 'pending') && (
         <div className="text-center py-8">
           <div className="w-16 h-16 rounded-full border-2 border-[#FDA829] border-t-transparent animate-spin mx-auto mb-6" />
           <h2 className="text-xl font-bold mb-2 text-[#111827]">
-            {step === 'approving' ? 'Preparing Transaction…' : 'Waiting for signature…'}
+            {step === 'signing' ? 'Waiting for signature…' : 'Processing on-chain…'}
           </h2>
-          <p className="text-sm text-[#9CA3AF]">{tip || 'Please confirm the transaction in your wallet plugin.'}</p>
+          <p className="text-sm text-[#9CA3AF]">{tip || 'Please confirm in your wallet.'}</p>
         </div>
       )}
 
-      {/* ── Success Step ── */}
+      {/* ── Success ── */}
       {step === 'success' && result && (
         <div className="text-center py-6">
-          <div className="w-16 h-16 rounded-full bg-[rgba(253,168,41,0.10)] flex items-center justify-center mx-auto mb-5">
-            <Clock className="w-8 h-8 text-[#FDA829]" />
+          <div className="w-16 h-16 rounded-full bg-[rgba(34,197,94,0.10)] flex items-center justify-center mx-auto mb-5">
+            <CheckCircle2 className="w-8 h-8 text-[#22C55E]" />
           </div>
-          <h2 className="text-xl font-bold mb-2 text-[#111827]">Submitted</h2>
+          <h2 className="text-xl font-bold mb-2 text-[#111827]">Anchored Successfully!</h2>
           <p className="text-sm text-[#6B7280] mb-5 max-w-xs mx-auto leading-relaxed">
-            Your anchor has been submitted and is being processed on-chain. This may take a few minutes.
+            Your contribution is now permanently recorded on-chain.
           </p>
 
           <div className="bg-[#F9FAFB] border border-[#F1F3F5] rounded-xl p-4 mb-6 text-left space-y-2">
             <div className="flex justify-between text-xs">
               <span className="text-[#9CA3AF]">Tx Hash</span>
-              <a href={`${BSC_EXPLORER_URL}/tx/${result.txHash}`} target="_blank" rel="noopener noreferrer"
+              <a href={`${CHAIN_EXPLORER_URL}/tx/${result.txHash}`} target="_blank" rel="noopener noreferrer"
                 className="font-mono text-[#FDA829] hover:underline flex items-center gap-1">
                 {shortenHash(result.txHash)} <ExternalLink className="w-3 h-3" />
               </a>
@@ -274,7 +241,7 @@ export default function AnchorModal({
         </div>
       )}
 
-      {/* ── Error Step ── */}
+      {/* ── Error ── */}
       {step === 'error' && (
         <div className="text-center py-8">
           <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6">
@@ -288,7 +255,6 @@ export default function AnchorModal({
           </div>
         </div>
       )}
-
     </Modal>
   );
 }

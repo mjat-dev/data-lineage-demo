@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { getUserInfo, clearToken, type UserInfo } from '@/lib/api';
+import { getUserInfo, clearToken, hasToken, type UserInfo } from '@/lib/api';
 
 export interface Submission {
   id: string;
@@ -62,11 +62,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [authLoading, setAuthLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  // Always start logged out — require fresh wallet connect each session
+  // Restore session from cookie on mount; show login modal only if no token
   useEffect(() => {
-    clearToken();
-    setAuthLoading(false);
-    setShowLoginModal(true);
+    if (hasToken()) {
+      getUserInfo()
+        .then((info) => {
+          setUserInfo(info);
+          const account = info.accounts_data.find(a => a.current_account) ?? info.accounts_data[0];
+          if (account?.account) {
+            setWalletAddress(account.account);
+            setWalletType(account.wallet_name);
+          } else {
+            setWalletAddress(info.user_data.user_id);
+          }
+        })
+        .catch(() => {
+          // Token expired or invalid — clear and show login
+          clearToken();
+          setShowLoginModal(true);
+        })
+        .finally(() => setAuthLoading(false));
+    } else {
+      setAuthLoading(false);
+      setShowLoginModal(true);
+    }
   }, []);
 
   // Called by WalletModal after CodattaSignin returns login response
