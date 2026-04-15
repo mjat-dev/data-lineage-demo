@@ -719,18 +719,22 @@ export default function DataLineage() {
                   <div className="p-5">
                     {!anchored ? (
                       /* ── Empty state: no on-chain activity until user anchors ── */
-                      <div className="flex flex-col items-center gap-3 py-8 text-center">
-                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                          <History className="w-5 h-5 text-gray-300" />
-                        </div>
-                        <p className="text-sm font-medium text-[#070707]">No activity yet</p>
-                        <p className="text-xs text-[#9CA3AF] max-w-xs leading-relaxed">
+                      <div className="space-y-3 py-2">
+                        <p className="text-xs text-[#9CA3AF] leading-relaxed">
                           Circulation records appear after your data is anchored on-chain, the dataset is assetified, and ownership tokens are minted.
                         </p>
-                        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                          className="mt-1 px-4 py-2 border border-[rgba(255,168,0,0.30)] rounded-xl text-[#FDA829] text-xs font-bold hover:bg-[rgba(255,168,0,0.08)] transition-colors">
-                          Anchor on-chain → Step 03
-                        </button>
+                        <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[rgba(255,168,0,0.05)] border border-[rgba(255,168,0,0.18)]">
+                          <div className="flex items-center gap-2 text-xs text-[#9CA3AF]">
+                            <AlertTriangle className="w-3.5 h-3.5 text-[#FDA829] shrink-0" />
+                            <span>No on-chain activity until data is anchored</span>
+                          </div>
+                          <button
+                            onClick={() => anchorNodeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                            className="shrink-0 text-[11px] font-bold text-[#FDA829] hover:text-[#E89B20] flex items-center gap-1 transition-colors whitespace-nowrap"
+                          >
+                            Go to Anchor <ArrowRight className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       /* ── Anchored: real mint + transfer records ── */
