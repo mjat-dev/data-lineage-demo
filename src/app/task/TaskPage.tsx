@@ -71,7 +71,7 @@ export default function TaskPage() {
         submittedAt: new Date().toISOString(),
         taskId,
         templateId,
-        status: 'submitted',
+        status: 'validated',
       });
       navigate('/profile');
     }, 1200);

@@ -110,7 +110,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const anchored = ['anchored', 'assetified', 'published'].includes(submission?.status ?? '');
   const setAnchored = (v: boolean) => {
-    if (v && submission) updateSubmissionStatus(submission.id, 'anchored');
+    if (v && submission) updateSubmissionStatus(submission.id, 'published');
   };
 
   const connectDemoWallet = () => {
