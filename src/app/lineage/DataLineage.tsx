@@ -107,11 +107,11 @@ function IdentityChip({ handle, role, did, wallet }: { handle: string; role?: st
 
 // ── Dataset contributors (shared between AssetChip popover + Ownership Snapshot) ──
 const ASSET_CONTRIBUTORS = [
-  { id: 'you',     label: 'You · @chef_kenshiro', role: 'Contributor', percent: 28, color: '#FDA829', isYou: true  },
-  { id: 'c2',      label: '@food_explorer_ai',    role: 'Contributor', percent: 22, color: '#3474FE', isYou: false },
-  { id: 'c3',      label: '@nutrition_lab',        role: 'Contributor', percent: 18, color: '#9CA3AF', isYou: false },
-  { id: 'c4',      label: '@gourmet_data',         role: 'Contributor', percent: 15, color: '#6B7280', isYou: false },
-  { id: 'c5',      label: '@health_bits',          role: 'Contributor', percent: 10, color: '#9CA3AF', isYou: false },
+  { id: 'you', label: 'did:codatta:sub_882aef9b4c', role: 'Contributor', percent: 28, color: '#FDA829', isYou: true  },
+  { id: 'c2',  label: '0x8fa2...bc31',              role: 'Contributor', percent: 22, color: '#3474FE', isYou: false },
+  { id: 'c3',  label: '0x3dc9...f772',              role: 'Contributor', percent: 18, color: '#9CA3AF', isYou: false },
+  { id: 'c4',  label: '0xb19c...44a1',              role: 'Contributor', percent: 15, color: '#6B7280', isYou: false },
+  { id: 'c5',  label: '0xe02f...8c53',              role: 'Contributor', percent: 10, color: '#9CA3AF', isYou: false },
   { id: 'c6',      label: '@recipe_master',        role: 'Contributor', percent:  7, color: '#6B7280', isYou: false },
 ];
 
@@ -162,8 +162,8 @@ function AssetChip({ name, assetId, onViewMore }: { name: string; assetId: strin
             {onViewMore && (
               <button
                 onClick={onViewMore}
-                className="text-[10px] font-bold text-[#FDA829] hover:text-[#E89B20] flex items-center gap-0.5 transition-colors">
-                view more <ArrowRight className="w-2.5 h-2.5" />
+                className="text-[9px] text-[#9CA3AF] hover:text-[#FDA829] flex items-center gap-0.5 transition-colors">
+                view more <ArrowRight className="w-2 h-2" />
               </button>
             )}
           </div>
@@ -172,7 +172,8 @@ function AssetChip({ name, assetId, onViewMore }: { name: string; assetId: strin
               <div key={id} className={`flex items-center justify-between px-1.5 py-1 rounded-lg ${isYou ? 'bg-[rgba(253,168,41,0.06)]' : ''}`}>
                 <div className="flex items-center gap-1.5 min-w-0">
                   <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
-                  <span className={`text-[10px] truncate ${isYou ? 'font-bold text-[#FDA829]' : 'text-[#6B7280]'}`}>{label}</span>
+                  <span className={`text-[10px] font-mono truncate ${isYou ? 'text-[#FDA829]' : 'text-[#6B7280]'}`}>{label}</span>
+                  {isYou && <span className="text-[9px] font-bold text-[#FDA829] shrink-0 opacity-80">· You</span>}
                 </div>
                 <span className={`text-[10px] font-bold ml-2 shrink-0 ${isYou ? 'text-[#FDA829]' : 'text-[#070707]'}`}>{percent}%</span>
               </div>
@@ -732,7 +733,7 @@ export default function DataLineage() {
                       <div className="space-y-8 relative pl-6 border-l border-gray-200">
                         {((): Array<{
                             id: string; time: string; type: string; title: string; desc: string;
-                            fields: Array<{ label: string; value: string; bold?: boolean; link?: string }>;
+                            fields: Array<{ label: string; value: string; bold?: boolean; link?: string; isYou?: boolean }>;
                             highlight: boolean;
                           }> => [
                           {
@@ -740,8 +741,8 @@ export default function DataLineage() {
                             title: 'ERC-1155 tokens minted to You',
                             desc: '65 ownership tokens minted to your wallet · contributor share for Food Science dataset.',
                             fields: [
-                              { label: 'To', value: 'did:codatta:sub_882aef9b4c' },
-                              { label: 'Wallet', value: '0xfdbF...D089' },
+                              { label: 'To', value: 'did:codatta:sub_882aef9b4c', isYou: true },
+                              { label: 'Wallet', value: '0xfdbF...D089', isYou: true },
                               { label: 'Share', value: '65 tokens · 28%', bold: true },
                               { label: 'Tx Hash', value: '0xd94e...7f3a', link: 'https://bscscan.com/tx/0xd94e' },
                             ],
@@ -752,7 +753,7 @@ export default function DataLineage() {
                             title: 'Backer A purchased 10 tokens',
                             desc: 'ERC-1155 token transfer · contributor → backer',
                             fields: [
-                              { label: 'From', value: 'did:codatta:sub_882aef9b4c' },
+                              { label: 'From', value: 'did:codatta:sub_882aef9b4c', isYou: true },
                               { label: 'To', value: '0x8fa2...bc31' },
                               { label: 'Share', value: '10 tokens', bold: true },
                               { label: 'Tx Hash', value: '0xa13f...92bd', link: 'https://bscscan.com/tx/0xa13f' },
@@ -764,7 +765,7 @@ export default function DataLineage() {
                             title: 'Contribution Reward Paid Out',
                             desc: 'Dataset accessed by AI model · MM-Food-100K v1.0.2 used for fine-tuning by NutriVision Labs.',
                             fields: [
-                              { label: 'To', value: 'did:codatta:sub_882aef9b4c' },
+                              { label: 'To', value: 'did:codatta:sub_882aef9b4c', isYou: true },
                               { label: 'Reason', value: 'Dataset accessed · API' },
                               { label: 'Your payout', value: '8.4 XNY (28%)', bold: true },
                               { label: 'Tx Hash', value: '0xb82c...44ef', link: 'https://bscscan.com/tx/0xb82c' },
@@ -776,7 +777,7 @@ export default function DataLineage() {
                             title: 'Backer B purchased 5 tokens',
                             desc: 'ERC-1155 token transfer · contributor → backer',
                             fields: [
-                              { label: 'From', value: 'did:codatta:sub_882aef9b4c' },
+                              { label: 'From', value: 'did:codatta:sub_882aef9b4c', isYou: true },
                               { label: 'To', value: '0x3dc9...f772' },
                               { label: 'Share', value: '5 tokens', bold: true },
                               { label: 'Tx Hash', value: '0x7cc4...1ab9', link: 'https://bscscan.com/tx/0x7cc4' },
@@ -788,7 +789,7 @@ export default function DataLineage() {
                             title: 'Contribution Reward Paid Out',
                             desc: 'Dataset licensed to academic institution · MM-Food-100K v1.0.2 used by OpenDiet Research.',
                             fields: [
-                              { label: 'To', value: 'did:codatta:sub_882aef9b4c' },
+                              { label: 'To', value: 'did:codatta:sub_882aef9b4c', isYou: true },
                               { label: 'Reason', value: 'Dataset licensed · Academic' },
                               { label: 'Your payout', value: '14 XNY (28%)', bold: true },
                               { label: 'Tx Hash', value: '0xf391...c2a7', link: 'https://bscscan.com/tx/0xf391' },
@@ -826,7 +827,10 @@ export default function DataLineage() {
                                         {f.value} <ExternalLink className="w-3 h-3" />
                                       </a>
                                     ) : (
-                                      <span className={`truncate block ${f.bold ? 'font-bold text-[#111827]' : 'font-medium text-[#6B7280]'}`}>{f.value}</span>
+                                      <span className="flex items-center gap-1 min-w-0">
+                                        <span className={`font-mono truncate ${f.bold ? 'font-bold text-[#111827]' : 'font-medium text-[#6B7280]'}`}>{f.value}</span>
+                                        {f.isYou && <span className="text-[9px] font-bold text-[#FDA829] shrink-0">· you</span>}
+                                      </span>
                                     )}
                                   </div>
                                 ))}
