@@ -550,7 +550,7 @@ export default function DataLineage() {
                       </div>
                       <button
                         onClick={() => setShowAnchorModal(true)}
-                        className="shrink-0 px-5 py-2.5 bg-[#FDA829] hover:bg-[#E89B20] active:bg-[#D08A10] text-white font-bold text-sm rounded-xl flex items-center gap-2 transition-colors shadow-[0_4px_14px_rgba(253,168,41,0.30)]"
+                        className="shrink-0 px-6 py-2.5 bg-[#FDA829] hover:bg-[#E89B20] active:bg-[#D08A10] text-white font-bold text-sm rounded-xl flex items-center gap-2 transition-colors shadow-[0_4px_20px_rgba(253,168,41,0.40)]"
                       >
                         <Link2 className="w-4 h-4" />
                         Anchor On-Chain →
