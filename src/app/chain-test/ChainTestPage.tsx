@@ -47,8 +47,9 @@ function StatusBadge({ ok }: { ok: boolean }) {
 
 /* ── main page ─────────────────────────────────────────────────────────────── */
 export default function ChainTestPage() {
-  const { walletAddress, userInfo, isLoggedIn } = useApp();
+  const { walletAddress, isLoggedIn } = useApp();
   const { lastUsedWallet } = useCodattaConnectContext();
+  const userInfo = null; // demo mode — no real user info
 
   // ── shared inputs ──
   const [submissionId, setSubmissionId] = useState('');
@@ -66,8 +67,7 @@ export default function ChainTestPage() {
   // Auto-fill on mount
   useEffect(() => {
     if (walletAddress) setAddress(walletAddress);
-    if (userInfo?.user_data?.did) setUserDid(userInfo.user_data.did);
-    if (userInfo?.user_data?.user_id) setContributorDidId(userInfo.user_data.user_id);
+    // demo mode: userInfo always null
 
     try {
       const raw = sessionStorage.getItem('codatta_last_submission');

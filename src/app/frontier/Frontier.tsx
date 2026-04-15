@@ -58,15 +58,9 @@ export default function Frontier() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isLoggedIn) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    getFrontierList()
-      .then(list => setFrontiers(list))
-      .catch(() => setFrontiers([]))
-      .finally(() => setLoading(false));
+    // Demo mode: use local mock data, no API call
+    setFrontiers(isLoggedIn ? [DEMO_FRONTIER] : []);
+    setLoading(false);
   }, [isLoggedIn]);
 
   const handleClick = (f: FrontierItem) => {

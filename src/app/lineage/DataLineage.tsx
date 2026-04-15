@@ -12,7 +12,6 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatDate, truncateAddress } from '@/lib/utils';
-import { getSubmissionList } from '@/lib/api';
 
 
 // ── Hover Popover ─────────────────────────────────────────────────────────────
@@ -309,47 +308,15 @@ function _CirculationLog() {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function DataLineage() {
-  const { submission, setSubmission, anchored, setAnchored, walletAddress, isLoggedIn, userInfo } = useApp();
-  const [loading, setLoading] = useState(false);
-  const [hasRecords, setHasRecords] = useState<boolean | null>(null); // null = loading
-
-  useEffect(() => {
-    if (!isLoggedIn) { setHasRecords(false); return; }
-    getSubmissionList({ pageNum: 1, pageSize: 1 })
-      .then(r => setHasRecords(r.total > 0))
-      .catch(() => setHasRecords(false));
-  }, [isLoggedIn]);
+  const { submission, setSubmission, anchored, setAnchored, walletAddress, isLoggedIn } = useApp();
+  // Demo mode: if logged in, user has records (mock data in Dashboard)
+  const hasRecords = isLoggedIn;
   const [showAnchorModal, setShowAnchorModal] = useState(false);
-  const [anchorResult, setAnchorResult] = useState<{ txHash: string; cfId: string; blockNumber: number } | null>(null);
+  // Mock anchor result — used for display after demo anchoring
+  const anchorResult = anchored
+    ? { txHash: '0xa13f8d92b4c1e05f3d7a2b19c04e8f61d3a7c29e', cfId: '0x12ab34cd56ef7890aa11bb22cc33dd44ee55ff02', blockNumber: 43_281_774 }
+    : null;
 
-  // Fetch latest submission from API if not already in context
-  useEffect(() => {
-    if (submission || !isLoggedIn) return;
-    setLoading(true);
-    getSubmissionList({ pageNum: 1, pageSize: 1 })
-      .then(({ list }) => {
-        if (list.length > 0) {
-          const r = list[0];
-          const data = r.data_submission?.data || {};
-          setSubmission({
-            id: r.submission_id,
-            foodName: (data.food_name as string) || r.frontier_name || '',
-            foodWeight: (data.food_weight as string) || '',
-            cookingMethod: (data.cooking_method as string) || '',
-            calories: (data.calories as string) || '',
-            foodImageName: '',
-            foodImageUrl: (data.food_image as string) || '',
-            submittedAt: r.create_time ? new Date(r.create_time).toISOString() : '',
-            taskId: r.task_id,
-            templateId: r.template_id,
-            status: r.current_status || r.status,
-          });
-          if (r.chain_status === 1) setAnchored(true);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [isLoggedIn, submission, setSubmission, setAnchored]);
   const [showAnchorDetails, setShowAnchorDetails] = useState(false);
   const [showMetadata, setShowMetadata] = useState(false);
   const [circulationOpen, setCirculationOpen] = useState(true);
@@ -419,16 +386,8 @@ export default function DataLineage() {
 
 
 
-        {/* Loading state */}
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-28 text-center">
-            <div className="w-8 h-8 border-3 border-gray-200 border-t-[#FFA800] rounded-full animate-spin mb-4" />
-            <p className="text-sm text-[#9CA3AF]">Loading submission records...</p>
-          </div>
-        )}
-
         {/* Empty state */}
-        {!loading && !submission && (
+        {!submission && (
           <div className="flex flex-col items-center justify-center py-28 text-center">
             <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-5">
               <GitBranch className="w-7 h-7 text-gray-300" />
@@ -838,16 +797,7 @@ export default function DataLineage() {
       {showAnchorModal && submission && (
         <AnchorModal
           onClose={() => setShowAnchorModal(false)}
-          onSuccess={(result) => {
-            setAnchorResult(result);
-            setAnchored(true);
-          }}
-          submissionId={submission.id}
-          walletAddress={walletAddress || ''}
-          userDid={userInfo?.user_data?.did || ''}
-          foodImageUrl={submission.foodImageUrl}
-          frontierId={sessionStorage.getItem('codatta_frontier_id') || ''}
-          contributorDidId={userInfo?.user_data ? Number(userInfo.user_data.user_id) || 0 : 0}
+          onSuccess={() => setAnchored(true)}
         />
       )}
       {showMetadata && <MetadataDrawer onClose={() => setShowMetadata(false)} />}

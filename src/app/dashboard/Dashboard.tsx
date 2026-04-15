@@ -1,11 +1,9 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileUp, BadgeCheck, Link2, Coins, Wallet, ArrowRight, Inbox, Loader2, Zap } from 'lucide-react';
+import { FileUp, BadgeCheck, Link2, Coins, Wallet, ArrowRight, Zap, Inbox } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { getSubmissionStats, getSubmissionList, type SubmissionStats, type SubmissionRecord } from '@/lib/api';
 
 // ── Status pipeline ───────────────────────────────────────────────────────────
 const PIPELINE = ['submitted', 'validated', 'anchored', 'assetified', 'published'] as const;
@@ -35,24 +33,27 @@ const NEXT_STEP_CONFIG: Record<string, NextStepConfig> = {
   published:  { label: '已完成',   sublabel: 'Published',             variant: 'green',  isUserAction: false },
 };
 
+// ── Mock demo data ────────────────────────────────────────────────────────────
+const MOCK_STATS = {
+  all_count: 3,
+  total_submissions: 2,
+  on_chained: 1,
+  total_rewards: [{ reward_amount: '450', reward_type: 'XNY' }],
+  claimable_rewards: [],
+};
+
+const MOCK_RECORDS = [
+  { submission_id: 'SUB-88242-K', frontier_name: 'Mushroom Image Set', current_status: 'validated',  create_time: 1732110720, task_id: 'TASK-001', template_id: 'MVP_DEMO_TPL', task_type_name: 'Image Annotation', reward_show_name: '150 XNY', foodName: 'Mushroom Image Set' },
+  { submission_id: 'SUB-71834-M', frontier_name: 'Cherry Tomato Set',  current_status: 'submitted',  create_time: 1731924900, task_id: 'TASK-001', template_id: 'MVP_DEMO_TPL', task_type_name: 'Image Annotation', reward_show_name: '150 XNY', foodName: 'Cherry Tomato Set'  },
+  { submission_id: 'SUB-65210-R', frontier_name: 'Avocado Collection', current_status: 'published',  create_time: 1731660300, task_id: 'TASK-001', template_id: 'MVP_DEMO_TPL', task_type_name: 'Image Annotation', reward_show_name: '150 XNY', foodName: 'Avocado Collection' },
+];
+
 export default function Dashboard() {
   const { isLoggedIn, setSubmission } = useApp();
   const navigate = useNavigate();
-  const [stats, setStats] = useState<SubmissionStats | null>(null);
-  const [records, setRecords] = useState<SubmissionRecord[]>([]);
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (!isLoggedIn) return;
-    setLoading(true);
-    Promise.all([
-      getSubmissionStats().catch(() => null),
-      getSubmissionList({ pageNum: 1, pageSize: 20 }).catch(() => ({ list: [], total: 0 })),
-    ]).then(([s, r]) => {
-      if (s) setStats(s);
-      setRecords(r.list);
-    }).finally(() => setLoading(false));
-  }, [isLoggedIn]);
+  const stats = isLoggedIn ? MOCK_STATS : null;
+  const records = isLoggedIn ? MOCK_RECORDS : [];
 
   const totalRewardStr = stats?.total_rewards?.map(r => `${r.reward_amount} ${r.reward_type}`).join(', ') || '—';
 
@@ -126,11 +127,6 @@ export default function Dashboard() {
               </div>
               <p className="text-[#9CA3AF] text-sm">Connect your wallet to see submissions.</p>
             </Card>
-          ) : loading ? (
-            <Card className="p-12 flex flex-col items-center gap-4 text-center">
-              <Loader2 className="w-8 h-8 text-[#FFA800] animate-spin" />
-              <p className="text-[#9CA3AF] text-sm">Loading submissions...</p>
-            </Card>
           ) : records.length === 0 ? (
             <Card className="p-12 flex flex-col items-center gap-4 text-center">
               <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
@@ -159,6 +155,7 @@ export default function Dashboard() {
                       submittedAt: record.create_time ? new Date(record.create_time * 1000).toISOString() : new Date().toISOString(),
                       taskId: record.task_id,
                       templateId: record.template_id,
+                      status: record.current_status,
                     });
                     navigate('/lineage');
                   }}>

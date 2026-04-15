@@ -1,5 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { getUserInfo, clearToken, hasToken, type UserInfo } from '@/lib/api';
+import { createContext, useContext, useState } from 'react';
 
 export interface Submission {
   id: string;
@@ -15,13 +14,6 @@ export interface Submission {
   status: string;
 }
 
-interface LoginResponse {
-  token: string;
-  old_token?: string;
-  user_id: string;
-  new_user: boolean;
-}
-
 export function shortenAddress(address: string, len = 12): string {
   if (!address) return '';
   if (address.length <= len) return address;
@@ -29,24 +21,23 @@ export function shortenAddress(address: string, len = 12): string {
   return `${address.slice(0, half)}...${address.slice(-half)}`;
 }
 
+// ── Mock demo wallet ──────────────────────────────────────────────────────────
+const DEMO_WALLET = '0xfdbF0b002bea11E54250993E1298127Ad2CDD089';
+
 interface AppContextType {
-  // Auth
   walletAddress: string | null;
   walletType: string | null;
-  userInfo: UserInfo | null;
   isLoggedIn: boolean;
   authLoading: boolean;
   showLoginModal: boolean;
   setShowLoginModal: (v: boolean) => void;
-  loginWithResponse: (res: LoginResponse) => Promise<void>;
+  connectDemoWallet: () => void;
   disconnectWallet: () => void;
   displayName: string;
 
-  // Submission
   submission: Submission | null;
   setSubmission: (s: Submission) => void;
 
-  // Anchor (chain backend pending)
   anchored: boolean;
   setAnchored: (v: boolean) => void;
 }
@@ -55,90 +46,34 @@ const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [walletType, setWalletType] = useState<string | null>(null);
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [anchored, setAnchored] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(true);
 
-  // Restore session from cookie on mount; show login modal only if no token
-  useEffect(() => {
-    if (hasToken()) {
-      getUserInfo()
-        .then((info) => {
-          setUserInfo(info);
-          const account = info.accounts_data.find(a => a.current_account) ?? info.accounts_data[0];
-          if (account?.account) {
-            setWalletAddress(account.account);
-            setWalletType(account.wallet_name);
-          } else {
-            setWalletAddress(info.user_data.user_id);
-          }
-        })
-        .catch(() => {
-          // Token expired or invalid — clear and show login
-          clearToken();
-          setShowLoginModal(true);
-        })
-        .finally(() => setAuthLoading(false));
-    } else {
-      setAuthLoading(false);
-      setShowLoginModal(true);
-    }
-  }, []);
-
-  // Called by WalletModal after CodattaSignin returns login response
-  const loginWithResponse = async (_res: LoginResponse) => {
-    // Immediately mark as logged in using user_id from login response — no API needed
-    setWalletAddress(_res.user_id);
+  const connectDemoWallet = () => {
+    setWalletAddress(DEMO_WALLET);
     setShowLoginModal(false);
-
-    // Then fetch full profile to get real wallet address
-    try {
-      const info = await getUserInfo();
-      setUserInfo(info);
-      const account = info.accounts_data.find(a => a.current_account) ?? info.accounts_data[0];
-      if (account?.account) {
-        setWalletAddress(account.account);
-        setWalletType(account.wallet_name);
-      }
-    } catch (e) {
-      console.error('[AppContext] getUserInfo failed, using user_id as display:', e);
-    }
   };
 
   const disconnectWallet = () => {
-    clearToken();
     setWalletAddress(null);
-    setWalletType(null);
-    setUserInfo(null);
     setSubmission(null);
     setAnchored(false);
     setShowLoginModal(true);
   };
 
   const isLoggedIn = !!walletAddress;
-
-  // Display masked wallet address, fallback to user_name or truncated user_id
-  const displayName = (() => {
-    if (!userInfo) return walletAddress ? shortenAddress(walletAddress) : '';
-    const account = userInfo.accounts_data.find(a => a.current_account);
-    if (account?.account) return shortenAddress(account.account);
-    if (userInfo.user_data.user_name) return userInfo.user_data.user_name;
-    return shortenAddress(userInfo.user_data.user_id);
-  })();
+  const displayName = walletAddress ? shortenAddress(walletAddress) : '';
 
   return (
     <AppContext.Provider value={{
       walletAddress,
-      walletType,
-      userInfo,
+      walletType: 'demo',
       isLoggedIn,
-      authLoading,
+      authLoading: false,
       showLoginModal,
       setShowLoginModal,
-      loginWithResponse,
+      connectDemoWallet,
       disconnectWallet,
       displayName,
       submission,
