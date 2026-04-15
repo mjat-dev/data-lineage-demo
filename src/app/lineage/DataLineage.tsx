@@ -541,21 +541,19 @@ export default function DataLineage() {
                       ))}
                     </div>
 
-                    <div className="border-t border-gray-200 pt-5 space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="w-3.5 h-3.5 text-[#FDA829]" />
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-[#9CA3AF] line-through font-mono">~0.0002 ETH</span>
-                          <span className="text-sm font-bold text-[#5DDD22]">450 XNY</span>
-                        </div>
+                    <div className="border-t border-gray-200 pt-5 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Sparkles className="w-3.5 h-3.5 text-[#FDA829] shrink-0" />
+                        <span className="text-xs text-[#9CA3AF] line-through font-mono">~0.0002 ETH</span>
+                        <span className="text-sm font-bold text-[#5DDD22]">450 XNY</span>
                         <span className="text-[10px] text-[#9CA3AF]">Gas sponsored by platform</span>
                       </div>
                       <button
                         onClick={() => setShowAnchorModal(true)}
-                        className="w-full py-3.5 bg-[#FDA829] hover:bg-[#E89B20] active:bg-[#D08A10] text-white font-bold text-base rounded-2xl flex items-center justify-center gap-2 transition-colors shadow-[0_6px_20px_rgba(253,168,41,0.35)]"
+                        className="shrink-0 px-5 py-2.5 bg-[#FDA829] hover:bg-[#E89B20] active:bg-[#D08A10] text-white font-bold text-sm rounded-xl flex items-center gap-2 transition-colors shadow-[0_4px_14px_rgba(253,168,41,0.30)]"
                       >
-                        <Link2 className="w-5 h-5" />
-                        Anchor On-Chain Now →
+                        <Link2 className="w-4 h-4" />
+                        Anchor On-Chain →
                       </button>
                     </div>
                   </div>
@@ -618,12 +616,18 @@ export default function DataLineage() {
                     <p className="text-[10px] text-[#9CA3AF] mt-3 italic">Complete Step 03 to trigger assetification.</p>
                   </div>
 
-                  <button
-                    onClick={() => anchorNodeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                    className="mt-2 w-full py-2.5 rounded-xl border border-[rgba(255,168,0,0.35)] text-[#FDA829] text-sm font-bold hover:bg-[rgba(255,168,0,0.06)] transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Link2 className="w-4 h-4" /> Go to Step 03 · Anchor On-Chain →
-                  </button>
+                  <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[rgba(255,168,0,0.05)] border border-[rgba(255,168,0,0.18)]">
+                    <div className="flex items-center gap-2 text-xs text-[#9CA3AF]">
+                      <AlertTriangle className="w-3.5 h-3.5 text-[#FDA829] shrink-0" />
+                      <span>Complete Step 03 to unlock assetification</span>
+                    </div>
+                    <button
+                      onClick={() => anchorNodeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                      className="shrink-0 text-[11px] font-bold text-[#FDA829] hover:text-[#E89B20] flex items-center gap-1 transition-colors whitespace-nowrap"
+                    >
+                      Go to Anchor <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
