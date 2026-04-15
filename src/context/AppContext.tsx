@@ -86,32 +86,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Called by WalletModal after CodattaSignin returns login response
   const loginWithResponse = async (_res: LoginResponse) => {
-    // Step 1: get wallet address from MetaMask directly (fastest, most reliable)
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const eth = (window as any).ethereum;
-      const accounts: string[] = await eth?.request({ method: 'eth_accounts' });
-      if (accounts?.[0]) setWalletAddress(accounts[0]);
-    } catch {
-      // ignore
-    }
+    // Immediately mark as logged in using user_id from login response — no API needed
+    setWalletAddress(_res.user_id);
+    setShowLoginModal(false);
 
-    // Step 2: try getUserInfo for full profile (wallet type, assets, etc.)
+    // Then fetch full profile to get real wallet address
     try {
       const info = await getUserInfo();
       setUserInfo(info);
       const account = info.accounts_data.find(a => a.current_account) ?? info.accounts_data[0];
-      if (account) {
+      if (account?.account) {
         setWalletAddress(account.account);
         setWalletType(account.wallet_name);
-      } else {
-        setWalletAddress(_res.user_id);
       }
-      setShowLoginModal(false);
     } catch (e) {
-      console.error('[AppContext] getUserInfo failed:', e);
-      if (!walletAddress) setWalletAddress(_res.user_id);
-      setShowLoginModal(false);
+      console.error('[AppContext] getUserInfo failed, using user_id as display:', e);
     }
   };
 
