@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FileText, CheckCircle2, Link2, Package, Globe,
-  User, ChevronDown, Plus, Sparkles,
+  User, ChevronDown, Plus, Sparkles, Coins,
   Store, History, PieChart, ArrowRight, ExternalLink,
   X, AlertTriangle, Info, Copy, GitBranch,
 } from 'lucide-react';
@@ -11,15 +11,38 @@ import { useApp } from '@/context/AppContext';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { formatDate } from '@/lib/utils';
+import { formatDate, truncateAddress } from '@/lib/utils';
 import { getSubmissionList } from '@/lib/api';
 
 
 // ── Hover Popover ─────────────────────────────────────────────────────────────
-function HoverPopover({ children, content, align = 'left', direction = 'down' }: { children: React.ReactNode; content: React.ReactNode; align?: 'left' | 'right'; direction?: 'up' | 'down' }) {
+function HoverPopover({ children, content, align = 'left', direction = 'down', sticky = false }: {
+  children: React.ReactNode; content: React.ReactNode;
+  align?: 'left' | 'right'; direction?: 'up' | 'down';
+  sticky?: boolean; // hover opens, click-outside closes
+}) {
   const [show, setShow] = useState(false);
+  const wrapRef = useRef<HTMLSpanElement>(null);
+
+  // sticky mode: close on outside click
+  useEffect(() => {
+    if (!sticky || !show) return;
+    const handler = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setShow(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [sticky, show]);
+
   return (
-    <span className="relative inline-block" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+    <span
+      ref={wrapRef}
+      className="relative inline-block"
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={sticky ? undefined : () => setShow(false)}
+    >
       {children}
       {show && (
         <div className={`absolute ${direction === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'} z-50 ${align === 'right' ? 'right-0' : 'left-0'}`}
@@ -33,8 +56,16 @@ function HoverPopover({ children, content, align = 'left', direction = 'down' }:
 
 // ── Identity Chip ─────────────────────────────────────────────────────────────
 function IdentityChip({ handle, role, did, wallet }: { handle: string; role?: string; did?: string; wallet?: string }) {
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const copyField = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 1500);
+  };
+  const truncateDid = (d: string) => d.length <= 28 ? d : d.slice(0, 22) + '…' + d.slice(-4);
+
   const card = (
-    <div className="bg-white rounded-xl p-4 w-56 text-left border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+    <div className="bg-white rounded-xl p-4 w-60 text-left border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
       <div className="flex items-center gap-3 mb-3">
         <div className="w-8 h-8 rounded-full bg-[rgba(255,168,0,0.10)] flex items-center justify-center shrink-0">
           <User className="w-4 h-4 text-[#FFA800]" />
@@ -44,8 +75,28 @@ function IdentityChip({ handle, role, did, wallet }: { handle: string; role?: st
           {role && <p className="text-[10px] text-[#9CA3AF]">{role}</p>}
         </div>
       </div>
-      {did && <div className="mb-2"><p className="text-[9px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-0.5">DID</p><p className="text-[10px] font-mono text-[#FFA800] break-all">{did}</p></div>}
-      {wallet && <div><p className="text-[9px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-0.5">Wallet</p><p className="text-[10px] font-mono text-[#6B7280]">{wallet}</p></div>}
+      {did && (
+        <div className="mb-2">
+          <p className="text-[9px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-0.5">DID</p>
+          <div className="flex items-center gap-1">
+            <p className="text-[10px] font-mono text-[#FFA800] flex-1 min-w-0 truncate">{truncateDid(did)}</p>
+            <button onClick={() => copyField(did, 'did')} className="shrink-0 p-1 rounded hover:bg-gray-100 transition-colors">
+              {copiedField === 'did' ? <CheckCircle2 className="w-3 h-3 text-[#22C55E]" /> : <Copy className="w-3 h-3 text-[#9CA3AF]" />}
+            </button>
+          </div>
+        </div>
+      )}
+      {wallet && (
+        <div>
+          <p className="text-[9px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-0.5">Wallet</p>
+          <div className="flex items-center gap-1">
+            <p className="text-[10px] font-mono text-[#6B7280] flex-1 min-w-0 truncate">{truncateAddress(wallet)}</p>
+            <button onClick={() => copyField(wallet, 'wallet')} className="shrink-0 p-1 rounded hover:bg-gray-100 transition-colors">
+              {copiedField === 'wallet' ? <CheckCircle2 className="w-3 h-3 text-[#22C55E]" /> : <Copy className="w-3 h-3 text-[#9CA3AF]" />}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
   return (
@@ -55,8 +106,19 @@ function IdentityChip({ handle, role, did, wallet }: { handle: string; role?: st
   );
 }
 
+// ── Dataset contributors (shared between AssetChip popover + Ownership Snapshot) ──
+const ASSET_CONTRIBUTORS = [
+  { id: 'you',     label: 'You · @chef_kenshiro', role: 'Contributor', percent: 28, color: '#FDA829', isYou: true  },
+  { id: 'c2',      label: '@food_explorer_ai',    role: 'Contributor', percent: 22, color: '#3474FE', isYou: false },
+  { id: 'c3',      label: '@nutrition_lab',        role: 'Contributor', percent: 18, color: '#9CA3AF', isYou: false },
+  { id: 'c4',      label: '@gourmet_data',         role: 'Contributor', percent: 15, color: '#6B7280', isYou: false },
+  { id: 'c5',      label: '@health_bits',          role: 'Contributor', percent: 10, color: '#9CA3AF', isYou: false },
+  { id: 'c6',      label: '@recipe_master',        role: 'Contributor', percent:  7, color: '#6B7280', isYou: false },
+];
+
 // ── Asset Chip ────────────────────────────────────────────────────────────────
-function AssetChip({ name, assetId }: { name: string; assetId: string }) {
+function AssetChip({ name, assetId, onViewMore }: { name: string; assetId: string; onViewMore?: () => void }) {
+  const preview = ASSET_CONTRIBUTORS.slice(0, 3);
   const popover = (
     <div className="bg-white rounded-xl p-5 w-80 text-left border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
       <p className="text-[9px] uppercase font-bold text-[#FFA800] tracking-widest mb-3">Composition Logic</p>
@@ -88,29 +150,36 @@ function AssetChip({ name, assetId }: { name: string; assetId: string }) {
           </div>
         </div>
       </div>
+
+      {/* Contributor ownership summary */}
       <div className="border-t border-gray-100 pt-3">
-        <p className="text-[9px] uppercase font-bold text-[#9CA3AF] tracking-widest mb-2">Initial Ownership Summary</p>
-        {[
-          { role: 'Contributor', handle: '@chef_kenshiro', pct: 40, color: '#FFA800' },
-          { role: 'Validator', handle: 'Codatta QA Admin', pct: 25, color: '#3474FE' },
-          { role: 'Initial Staker', handle: '@alpha_backer', pct: 25, color: '#9CA3AF' },
-          { role: 'Protocol Treasury', handle: null, pct: 10, color: '#6B7280' },
-        ].map(({ role, handle, pct, color }) => (
-          <div key={role} className="flex items-center justify-between py-1">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
-              <span className="text-[10px] text-[#6B7280] shrink-0">{role}</span>
-              {handle && <span className="text-[10px] font-mono text-[#FFA800] ml-1">· {handle}</span>}
+        <p className="text-[9px] uppercase font-bold text-[#9CA3AF] tracking-widest mb-2">
+          Contributors · {ASSET_CONTRIBUTORS.length} total
+        </p>
+        <div className="space-y-0.5 mb-2">
+          {preview.map(({ id, label, percent, color, isYou }) => (
+            <div key={id} className={`flex items-center justify-between px-1.5 py-1 rounded-lg ${isYou ? 'bg-[rgba(253,168,41,0.06)]' : ''}`}>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
+                <span className={`text-[10px] truncate ${isYou ? 'font-bold text-[#FDA829]' : 'text-[#6B7280]'}`}>{label}</span>
+              </div>
+              <span className={`text-[10px] font-bold ml-2 shrink-0 ${isYou ? 'text-[#FDA829]' : 'text-[#070707]'}`}>{percent}%</span>
             </div>
-            <span className="text-[10px] font-bold ml-2 shrink-0 text-[#070707]">{pct}%</span>
-          </div>
-        ))}
+          ))}
+        </div>
+        {onViewMore && (
+          <button
+            onClick={onViewMore}
+            className="w-full text-center text-[10px] font-bold text-[#FDA829] hover:text-[#E89B20] pt-2 border-t border-gray-100 flex items-center justify-center gap-1 transition-colors">
+            View All {ASSET_CONTRIBUTORS.length} Contributors <ArrowRight className="w-3 h-3" />
+          </button>
+        )}
       </div>
     </div>
   );
   return (
-    <HoverPopover content={popover} direction="up">
-      <span className="px-3 py-1 rounded-xl border border-[rgba(255,168,0,0.30)] bg-[rgba(255,168,0,0.08)] text-[#FFA800] text-xs font-bold cursor-default hover:bg-[rgba(255,168,0,0.12)] transition-all inline-flex items-center gap-1.5">
+    <HoverPopover content={popover} direction="up" sticky>
+      <span className="px-3 py-1 rounded-xl border border-[rgba(255,168,0,0.30)] bg-[rgba(255,168,0,0.08)] text-[#FDA829] text-xs font-bold cursor-pointer hover:bg-[rgba(255,168,0,0.12)] transition-all inline-flex items-center gap-1.5">
         <Package className="w-3 h-3" />{name}
       </span>
     </HoverPopover>
@@ -171,21 +240,12 @@ function MetadataDrawer({ onClose }: { onClose: () => void }) {
             { label: 'Storage Type', value: 'IPFS + Codatta Off-chain' },
             { label: 'Object Hash', value: 'Qm3k7...f9a2' },
             { label: 'DID Snapshot', value: 'did:codatta:sub_882...' },
-            { label: 'Binding Status', value: 'Confirmed' },
-            { label: 'Registered At', value: '2025-11-20 14:32 UTC' },
-            { label: 'Protocol Version', value: 'codatta-v0.4' },
           ].map(({ label, value }) => (
             <div key={label} className="bg-gray-50 rounded-xl p-3">
               <p className="text-[9px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-1">{label}</p>
               <p className="text-xs font-mono text-[#6B7280]">{value}</p>
             </div>
           ))}
-          <div className="bg-[rgba(255,168,0,0.06)] border border-[rgba(255,168,0,0.15)] rounded-xl p-3 mt-4">
-            <p className="text-[9px] uppercase text-[#FFA800]/60 font-bold tracking-wider mb-1">Note</p>
-            <p className="text-xs text-[#6B7280] leading-relaxed">
-              Off-chain storage completes identity binding and DID snapshot registration. On-chain record begins from Node 3 (Anchor on-chain).
-            </p>
-          </div>
         </div>
       </div>
       <div className="flex-1 bg-black/20 backdrop-blur-sm" onClick={onClose} />
@@ -251,6 +311,14 @@ function _CirculationLog() {
 export default function DataLineage() {
   const { submission, setSubmission, anchored, setAnchored, walletAddress, isLoggedIn, userInfo } = useApp();
   const [loading, setLoading] = useState(false);
+  const [hasRecords, setHasRecords] = useState<boolean | null>(null); // null = loading
+
+  useEffect(() => {
+    if (!isLoggedIn) { setHasRecords(false); return; }
+    getSubmissionList({ pageNum: 1, pageSize: 1 })
+      .then(r => setHasRecords(r.total > 0))
+      .catch(() => setHasRecords(false));
+  }, [isLoggedIn]);
   const [showAnchorModal, setShowAnchorModal] = useState(false);
   const [anchorResult, setAnchorResult] = useState<{ txHash: string; cfId: string; blockNumber: number } | null>(null);
 
@@ -284,11 +352,17 @@ export default function DataLineage() {
   }, [isLoggedIn, submission, setSubmission, setAnchored]);
   const [showAnchorDetails, setShowAnchorDetails] = useState(false);
   const [showMetadata, setShowMetadata] = useState(false);
-  const [showClaimModal, setShowClaimModal] = useState(false);
-  const [claimed, setClaimed] = useState(false);
   const [circulationOpen, setCirculationOpen] = useState(true);
   const [ownershipOpen, setOwnershipOpen] = useState(true);
+  const [ownershipShowAll, setOwnershipShowAll] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const ownershipRef = useRef<HTMLDivElement>(null);
+
+  const handleViewMoreOwnership = () => {
+    setOwnershipOpen(true);
+    setOwnershipShowAll(true);
+    setTimeout(() => ownershipRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  };
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -301,7 +375,8 @@ export default function DataLineage() {
   const subDate = submission?.submittedAt
     ? formatDate(submission.submittedAt) + ' ' + new Date(submission.submittedAt).toTimeString().slice(0, 5)
     : '2025-11-20 14:32';
-  const walletAddr = walletAddress || '0x3a4f...9c21';
+  const walletFull = walletAddress || '0xfdbF0b002bea11E54250993E1298127Ad2CDD089';
+  const walletAddr = truncateAddress(walletFull);
 
   return (
     <main className="pt-24 pb-20 bg-[#F5F5F5]">
@@ -358,11 +433,26 @@ export default function DataLineage() {
             <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-5">
               <GitBranch className="w-7 h-7 text-gray-300" />
             </div>
-            <h2 className="text-xl font-bold text-[#070707] mb-2">No submission on record</h2>
-            <p className="text-sm text-[#9CA3AF] max-w-xs leading-relaxed">Submit a data contribution on the Frontier page to start tracking its provenance here.</p>
-            <Link to="/" className="mt-6 inline-block px-5 py-2.5 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-sm font-bold transition-colors">
-              Go to Frontier
-            </Link>
+            <h2 className="text-xl font-bold text-[#070707] mb-2">No submission selected</h2>
+            {hasRecords ? (
+              <>
+                <p className="text-sm text-[#9CA3AF] max-w-xs leading-relaxed">
+                  Select a submission from Data Profile to view its lineage here.
+                </p>
+                <Link to="/profile" className="mt-6 inline-block px-5 py-2.5 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-sm font-bold transition-colors">
+                  View My Submissions →
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-[#9CA3AF] max-w-xs leading-relaxed">
+                  Submit a data contribution on the Frontier page to start tracking its provenance here.
+                </p>
+                <Link to="/" className="mt-6 inline-block px-5 py-2.5 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-sm font-bold transition-colors">
+                  Go to Frontier
+                </Link>
+              </>
+            )}
           </div>
         )}
 
@@ -379,7 +469,7 @@ export default function DataLineage() {
                 </div>
                 <p className="text-sm text-[#070707]">
                   Contributor{' '}
-                  <IdentityChip handle={walletAddr} role="Contributor" did="did:codatta:contributor" wallet={walletAddr} />{' '}
+                  <IdentityChip handle={walletAddr} role="Contributor" did="did:codatta:contributor_sub_882aef9b4c" wallet={walletFull} />{' '}
                   submitted to <span className="text-[#6B7280]">Nutritional Analysis · Image 2 Text</span>
                 </p>
               </div>
@@ -391,7 +481,6 @@ export default function DataLineage() {
                   className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-medium text-[#070707] transition-colors">
                   <Package className="w-4 h-4 text-[#FFA800]" /> Storage &amp; Metadata
                 </button>
-                <span className="text-[10px] font-mono text-[#9CA3AF]">DID: codatta:sub_882...</span>
               </div>
             </CollapsibleCard>
           </NodeWrapper>
@@ -459,15 +548,13 @@ export default function DataLineage() {
                     </div>
 
                     <div className="flex items-center justify-between border-t border-gray-200 pt-5">
-                      <div className="space-y-1">
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-[10px] font-bold uppercase text-[#9CA3AF]">Service Fee</span>
-                          <span className="font-bold text-[#FFA800]">450 XNY</span>
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-[#FDA829]" />
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-[#9CA3AF] line-through font-mono">~0.0002 ETH</span>
+                          <span className="text-sm font-bold text-[#5DDD22]">0 XNY</span>
                         </div>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-[10px] font-bold uppercase text-[#9CA3AF]">Network Fee</span>
-                          <span className="text-sm font-mono text-[#6B7280]">~0.0002 ETH</span>
-                        </div>
+                        <span className="text-[10px] text-[#9CA3AF]">Gas sponsored by platform</span>
                       </div>
                       <Button variant="primary" size="lg" onClick={() => setShowAnchorModal(true)}>
                         Start Anchoring →
@@ -497,12 +584,6 @@ export default function DataLineage() {
                       </button>
                     </div>
                   </div>
-                  <div className="flex justify-end">
-                    <button onClick={() => setShowAnchorDetails(true)}
-                      className="px-4 py-2 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-xs font-bold transition-colors">
-                      Details
-                    </button>
-                  </div>
                 </div>
               )}
             </CollapsibleCard>
@@ -514,7 +595,6 @@ export default function DataLineage() {
               title="Assetification"
               badge={anchored ? 'Dataset Asset On-chain · v1.0.2' : 'Pending Anchor'}
               badgeVariant={anchored ? 'orange' : 'gray'}
-              timestamp="2025-11-22 10:00"
             >
               {!anchored ? (
                 <div className="space-y-5">
@@ -539,21 +619,13 @@ export default function DataLineage() {
                     <p className="text-[10px] text-[#9CA3AF] mt-3 italic">Complete Step 03 to trigger assetification.</p>
                   </div>
 
-                  <div className="flex items-center gap-3 p-4 rounded-xl bg-[rgba(255,168,0,0.06)] border border-[rgba(255,168,0,0.15)]">
-                    <AlertTriangle className="w-5 h-5 text-[#FFA800] shrink-0" />
-                    <p className="flex-1 text-sm text-[#6B7280]">Your data must be anchored on-chain before it can enter the dataset asset pipeline.</p>
-                    <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                      className="shrink-0 px-4 py-2 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-xs font-bold transition-colors">
-                      Anchor On-Chain →
-                    </button>
-                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {/* Asset chip + HuggingFace link */}
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm text-[#070707]">Dataset Asset:</p>
-                    <AssetChip name="Food-Science-Asset-42" assetId="asset_882_v1" />
+                    <AssetChip name="Food-Science-Asset-42" assetId="asset_882_v1" onViewMore={handleViewMoreOwnership} />
                     <p className="text-sm text-[#9CA3AF]">published to</p>
                     <a href="https://huggingface.co/datasets/Codatta/MM-Food-100K" target="_blank" rel="noopener noreferrer"
                       className="px-3 py-1 rounded-xl border border-gray-200 bg-white text-[#070707] text-xs font-bold hover:border-[#FFA800]/40 hover:text-[#FFA800] transition-colors inline-flex items-center gap-1">
@@ -564,34 +636,32 @@ export default function DataLineage() {
                   {/* Pipeline steps — all completed */}
                   <div className="bg-gray-50 border border-[rgba(34,197,94,0.15)] rounded-xl p-4">
                     <p className="text-[10px] font-bold uppercase text-[#9CA3AF] tracking-wider mb-3">Assetification Pipeline · Completed</p>
-                    <div className="space-y-3 text-xs mb-4">
+                    <div className="space-y-2 text-xs mb-4">
                       {[
-                        { step: '①', label: 'Frontier dataset bundled on-chain', tx: '0xd94e...7f3a', link: 'https://etherscan.io/tx/0xd94e' },
-                        { step: '②', label: 'Dataset uploaded to HuggingFace', tx: 'v1.0.2 · MM-Food-100K', link: 'https://huggingface.co/datasets/Codatta/MM-Food-100K' },
-                        { step: '③', label: 'Version hash recorded on-chain', tx: '0x8b2c...f41a', link: 'https://etherscan.io/tx/0x8b2c' },
-                      ].map(({ step, label, tx, link }) => (
-                        <div key={step} className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E] shrink-0" />
-                            <span className="text-[#070707]">{step} {label}</span>
-                          </div>
-                          <a href={link} target="_blank" rel="noopener noreferrer"
-                            className="font-mono text-[#FFA800] hover:underline flex items-center gap-1 shrink-0 text-[10px]">
-                            {tx} <ExternalLink className="w-3 h-3" />
-                          </a>
+                        'Frontier dataset bundled on-chain',
+                        'Dataset uploaded to HuggingFace',
+                        'Version hash recorded on-chain',
+                      ].map((label) => (
+                        <div key={label} className="flex items-center gap-2.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E] shrink-0" />
+                          <span className="text-[#070707]">{label}</span>
                         </div>
                       ))}
                     </div>
-                    <div className="border-t border-gray-100 pt-3 flex items-center justify-between text-xs">
-                      <span className="text-[#9CA3AF]">HuggingFace Version</span>
-                      <span className="font-bold text-[#070707] font-mono">v1.0.2</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs mt-2">
-                      <span className="text-[#9CA3AF]">On-chain Version Hash</span>
-                      <span className="font-mono text-[#6B7280]">0x8b2c...f41a</span>
+                    <div className="border-t border-gray-100 pt-3 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-[#9CA3AF]">On-chain Tx</span>
+                        <a href="https://etherscan.io/tx/0xd94e" target="_blank" rel="noopener noreferrer"
+                          className="font-mono text-[#FDA829] hover:underline flex items-center gap-1 text-[10px]">
+                          0xd94e...7f3a <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-[#9CA3AF]">HuggingFace Version</span>
+                        <span className="font-bold text-[#070707] font-mono">v1.0.2</span>
+                      </div>
                     </div>
                   </div>
-                  <p className="text-[11px] text-[#9CA3AF] italic">Hover the asset chip to view dataset composition and ownership summary.</p>
                 </div>
               )}
             </CollapsibleCard>
@@ -634,63 +704,54 @@ export default function DataLineage() {
                 </button>
                 {circulationOpen && (
                   <div className="p-5">
-                    {!anchored && (
-                      <div className="mb-5 p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs text-[#6B7280] flex items-start gap-2">
-                        <Info className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-                        <span>Other contributors who have anchored their data can earn royalties when their ownership tokens are transferred or traded. Anchor your data in Step 03 to participate.</span>
-                      </div>
-                    )}
-                    <div className="space-y-8 relative pl-6 border-l border-gray-200">
-                      {[
-                        ...(anchored ? [
-                          { id: 'you-mint', time: '2025-11-25 11:30', type: 'Mint', title: 'ERC-1155 tokens minted to You', desc: claimed ? 'Your 65 ownership tokens claimed and minted to your wallet.' : 'Your 65 ownership tokens are ready to claim.', from: null, to: '@chef_kenshiro (You)', share: '65 tokens', tx: claimed ? '0xd94e...7f3a' : null, highlight: true, claimable: !claimed },
-                          { id: 'val-mint', time: '2025-11-26 09:00', type: 'Mint', title: 'Validator share minted', desc: 'Protocol validator share minted. 25 tokens.', from: null, to: 'Protocol Validator', share: '25 tokens', tx: '0x3d82...a01c', highlight: false, claimable: false },
-                          { id: 'treasury-mint', time: '2025-11-26 09:00', type: 'Mint', title: 'Treasury share minted', desc: 'Protocol treasury share. 10 tokens.', from: null, to: 'Protocol Treasury', share: '10 tokens', tx: '0x3d82...a01c', highlight: false, claimable: false },
-                          { id: 'backer-a', time: '2025-11-27 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@alpha_backer', to: 'Backer A', share: '10 tokens', tx: '0xa13f...92bd', highlight: false, claimable: false },
-                          { id: 'backer-b', time: '2025-11-28 09:42', type: 'Transfer', title: 'Backer B purchased 5 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@alpha_backer', to: 'Backer B', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false, claimable: false },
-                        ] : [
-                          { id: 'val-mint-pre', time: '2025-11-22 10:00', type: 'Mint', title: 'Validator share minted', desc: 'Protocol validator share minted on-chain.', from: null, to: 'Protocol Validator', share: '25 tokens', tx: '0x3d82...a01c', highlight: false, claimable: false },
-                          { id: 'treasury-mint-pre', time: '2025-11-22 10:00', type: 'Mint', title: 'Treasury share minted', desc: 'Protocol treasury share minted.', from: null, to: 'Protocol Treasury', share: '10 tokens', tx: '0x3d82...a01c', highlight: false, claimable: false },
-                          { id: 'backer-a-pre', time: '2025-11-23 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 direct transfer via wallet. You cannot trade your share until you anchor on-chain.', from: '@other_contributor', to: 'Backer A', share: '10 tokens', tx: '0xa13f...92bd', highlight: false, claimable: false },
-                          { id: 'backer-b-pre', time: '2025-11-24 09:42', type: 'Transfer', title: 'Backer B purchased 5 tokens', desc: 'ERC-1155 direct transfer via wallet.', from: '@other_contributor', to: 'Backer B', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false, claimable: false },
-                        ]),
-                      ].map((evt) => (
-                        <div key={evt.id} className="relative">
-                          <div className={`absolute -left-[30px] top-1 w-4 h-4 rounded-full border-2 ${evt.highlight ? (claimed ? 'bg-[#22C55E] border-[#22C55E]' : 'bg-[#FFA800] border-[#FFA800] animate-pulse') : 'bg-white border-gray-300'}`} />
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-[11px]">
-                              <span className="font-mono text-[#9CA3AF]">{evt.time}</span>
-                              <Badge variant={evt.type === 'Transfer' ? 'blue' : 'orange'}>{evt.type}</Badge>
-                              {evt.claimable && <Badge variant="orange">Pending Claim</Badge>}
-                              {evt.highlight && claimed && <Badge variant="green">Claimed</Badge>}
-                            </div>
-                            <p className="text-sm font-bold text-[#070707]">{evt.title}</p>
-                            <p className="text-xs text-[#9CA3AF]">{evt.desc}</p>
-                            <div className={`p-3 rounded-xl border text-[11px] grid grid-cols-2 md:grid-cols-4 gap-3 ${evt.highlight ? 'bg-[rgba(255,168,0,0.06)] border-[rgba(255,168,0,0.15)]' : 'bg-gray-50 border-gray-100'}`}>
-                              {evt.from && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">From</span><span className="font-bold text-[#6B7280] truncate block">{evt.from}</span></div>}
-                              <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">To</span><span className="font-bold text-[#6B7280] truncate block">{evt.to}</span></div>
-                              <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Share</span><span className="font-bold text-[#070707]">{evt.share}</span></div>
-                              {evt.tx && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Tx Hash</span><a href={`https://etherscan.io/tx/${evt.tx}`} target="_blank" rel="noopener noreferrer" className="text-[#3474FE] hover:underline flex items-center gap-1">{evt.tx} <ExternalLink className="w-3 h-3" /></a></div>}
-                            </div>
-                            {evt.claimable && (
-                              <button onClick={() => setShowClaimModal(true)}
-                                className="mt-2 px-5 py-2.5 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-xs font-bold transition-colors">
-                                Claim Tokens →
-                              </button>
-                            )}
-                          </div>
+                    {!anchored ? (
+                      /* ── Empty state: no on-chain activity until user anchors ── */
+                      <div className="flex flex-col items-center gap-3 py-8 text-center">
+                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                          <History className="w-5 h-5 text-gray-300" />
                         </div>
-                      ))}
-                    </div>
-
-                    {!anchored && (
-                      <div className="mt-6 flex items-center gap-3 p-4 rounded-xl bg-[rgba(255,168,0,0.06)] border border-[rgba(255,168,0,0.15)]">
-                        <AlertTriangle className="w-5 h-5 text-[#FFA800] shrink-0" />
-                        <p className="flex-1 text-xs text-[#6B7280]">Others are minting and trading tokens. You cannot trade your share until you anchor on-chain.</p>
+                        <p className="text-sm font-medium text-[#070707]">No activity yet</p>
+                        <p className="text-xs text-[#9CA3AF] max-w-xs leading-relaxed">
+                          Circulation records appear after your data is anchored on-chain, the dataset is assetified, and ownership tokens are minted.
+                        </p>
                         <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                          className="shrink-0 px-4 py-2 border border-[rgba(255,168,0,0.30)] rounded-xl text-[#FFA800] text-xs font-bold hover:bg-[rgba(255,168,0,0.08)] transition-colors">
-                          ← Step 03
+                          className="mt-1 px-4 py-2 border border-[rgba(255,168,0,0.30)] rounded-xl text-[#FDA829] text-xs font-bold hover:bg-[rgba(255,168,0,0.08)] transition-colors">
+                          Anchor on-chain → Step 03
                         </button>
+                      </div>
+                    ) : (
+                      /* ── Anchored: real mint + transfer records ── */
+                      <div className="space-y-8 relative pl-6 border-l border-gray-200">
+                        {[
+                          { id: 'you-mint', time: '2025-11-25 11:30', type: 'Mint', title: 'ERC-1155 tokens minted to You', desc: 'Your 65 ownership tokens minted to your wallet.', from: null, to: '@chef_kenshiro (You)', share: '65 tokens', tx: '0xd94e...7f3a', highlight: true },
+                          { id: 'backer-a', time: '2025-11-27 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 token transfer · contributor → backer', from: '@chef_kenshiro · did:codatta:sub_882…9b4c', to: '0x8fa2...bc31', share: '10 tokens', tx: '0xa13f...92bd', highlight: false },
+                          { id: 'backer-b', time: '2025-11-28 09:42', type: 'Transfer', title: 'Backer B purchased 5 tokens', desc: 'ERC-1155 token transfer · contributor → backer', from: '@chef_kenshiro · did:codatta:sub_882…9b4c', to: '0x3dc9...f772', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false },
+                        ].map((evt) => (
+                          <div key={evt.id} className="relative">
+                            <div className={`absolute -left-[30px] top-1 w-4 h-4 rounded-full border-2 ${evt.highlight ? 'bg-[#FDA829] border-[#FDA829]' : 'bg-white border-gray-300'}`} />
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-[11px]">
+                                <span className="font-mono text-[#9CA3AF]">{evt.time}</span>
+                                <Badge variant={evt.type === 'Transfer' ? 'blue' : 'orange'}>{evt.type}</Badge>
+                              </div>
+                              <p className="text-sm font-bold text-[#111827]">{evt.title}</p>
+                              <p className="text-xs text-[#9CA3AF]">{evt.desc}</p>
+                              <div className={`p-3 rounded-xl border text-[11px] grid grid-cols-2 md:grid-cols-4 gap-3 ${evt.highlight ? 'bg-[rgba(253,168,41,0.06)] border-[rgba(253,168,41,0.15)]' : 'bg-gray-50 border-gray-100'}`}>
+                                {evt.from && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">From</span><span className="font-bold text-[#6B7280] truncate block">{evt.from}</span></div>}
+                                <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">To</span><span className="font-bold text-[#6B7280] truncate block">{evt.to}</span></div>
+                                <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Share</span><span className="font-bold text-[#111827]">{evt.share}</span></div>
+                                {evt.tx && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Tx Hash</span><a href={`https://etherscan.io/tx/${evt.tx}`} target="_blank" rel="noopener noreferrer" className="text-[#3474FE] hover:underline flex items-center gap-1">{evt.tx} <ExternalLink className="w-3 h-3" /></a></div>}
+                              </div>
+                              {evt.id === 'you-mint' && (
+                                <a href="https://basescan.org/address/0xfdbf" target="_blank" rel="noopener noreferrer"
+                                  className="mt-1 w-full py-2.5 bg-[#FDA829] hover:bg-[#E89B20] active:bg-[#D08A10] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-colors">
+                                  <Coins className="w-4 h-4" />
+                                  Claim My 65 Tokens →
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -698,46 +759,77 @@ export default function DataLineage() {
               </Card>
 
               {/* Current Ownership */}
+              <div ref={ownershipRef}>
               <Card className="overflow-hidden p-0">
                 <button onClick={() => setOwnershipOpen(o => !o)}
                   className="w-full flex items-center justify-between p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center gap-3">
-                    <PieChart className="w-4 h-4 text-[#FFA800]" />
+                    <PieChart className="w-4 h-4 text-[#FDA829]" />
                     <span className="text-sm font-bold uppercase tracking-wider text-[#070707]">Current Ownership Snapshot</span>
                   </div>
                   <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${ownershipOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {ownershipOpen && (
                   <div className="p-5">
-                    {[
-                      ...(anchored ? [{ label: 'You · @chef_kenshiro', did: 'Contributor', percent: 65, color: '#FFA800' }] : []),
-                      { label: 'Protocol Validator', did: 'Validator', percent: 25, color: '#3474FE' },
-                      { label: 'Protocol Treasury', did: 'Treasury', percent: 10, color: '#9CA3AF' },
-                      ...(!anchored ? [{ label: 'You (unanchored)', did: 'Contributor', percent: 0, color: '#E5E7EB' }] : []),
-                    ].map(({ label, did, percent, color }) => (
-                      <div key={did} className="flex items-center justify-between py-3 px-2 rounded-xl even:bg-gray-50">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                            style={{ background: `${color}22`, color }}>
-                            {label.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-[#070707]">{label}</p>
-                            <p className="text-[9px] font-mono text-[#9CA3AF]">{did}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 shrink-0">
-                          <div className="w-36 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${percent}%`, background: color }} />
-                          </div>
-                          <span className="text-xs font-bold font-mono w-8 text-right text-[#070707]">{percent}%</span>
-                        </div>
+                    {!anchored && (
+                      <div className="mb-4 p-3 rounded-xl bg-[rgba(255,168,0,0.06)] border border-[rgba(255,168,0,0.15)] text-xs text-[#6B7280] flex items-start gap-2">
+                        <Info className="w-3.5 h-3.5 text-[#FDA829] shrink-0 mt-0.5" />
+                        <span>Anchor on-chain to activate your contributor share.</span>
                       </div>
-                    ))}
-                    {!anchored && <p className="text-[10px] text-[#9CA3AF] italic mt-3">Anchor on-chain to claim the contributor share (65 tokens).</p>}
+                    )}
+                    {(() => {
+                      const list = anchored
+                        ? ASSET_CONTRIBUTORS
+                        : ASSET_CONTRIBUTORS.map(c => c.isYou ? { ...c, percent: 0, color: '#E5E7EB', pending: true } : c);
+                      const visible = ownershipShowAll ? list : list.slice(0, 3);
+                      return (
+                        <>
+                          {visible.map((c) => {
+                            const isPending = !anchored && c.isYou;
+                            return (
+                              <div key={c.id} className={`flex items-center justify-between py-3 px-2 rounded-xl even:bg-gray-50 ${c.isYou && anchored ? 'bg-[rgba(253,168,41,0.04)]' : ''}`}>
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                                    style={{ background: `${c.color}22`, color: c.color }}>
+                                    {c.label.replace('You · ', '').slice(0, 2).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <p className={`text-xs font-bold ${c.isYou ? 'text-[#FDA829]' : 'text-[#070707]'}`}>{c.label}</p>
+                                    <p className="text-[9px] font-mono text-[#9CA3AF]">{c.role}{isPending ? ' · Pending anchor' : ''}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-4 shrink-0">
+                                  <div className="w-28 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${c.percent}%`, background: c.color }} />
+                                  </div>
+                                  <span className={`text-xs font-bold font-mono w-8 text-right ${isPending ? 'text-[#9CA3AF]' : 'text-[#070707]'}`}>
+                                    {isPending ? '—' : `${c.percent}%`}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {!ownershipShowAll && list.length > 3 && (
+                            <button
+                              onClick={() => setOwnershipShowAll(true)}
+                              className="mt-3 w-full text-center text-[10px] font-bold text-[#FDA829] hover:text-[#E89B20] py-2 border border-dashed border-[rgba(253,168,41,0.30)] rounded-xl flex items-center justify-center gap-1 transition-colors">
+                              + {list.length - 3} more contributors <ChevronDown className="w-3 h-3" />
+                            </button>
+                          )}
+                          {ownershipShowAll && list.length > 3 && (
+                            <button
+                              onClick={() => setOwnershipShowAll(false)}
+                              className="mt-3 w-full text-center text-[10px] text-[#9CA3AF] hover:text-[#6B7280] py-1.5 flex items-center justify-center gap-1 transition-colors">
+                              Show less <ChevronDown className="w-3 h-3 rotate-180" />
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </Card>
+              </div>
             </div>
           </NodeWrapper>
         </div>}
@@ -760,32 +852,6 @@ export default function DataLineage() {
       )}
       {showMetadata && <MetadataDrawer onClose={() => setShowMetadata(false)} />}
 
-      {/* Claim Modal */}
-      {showClaimModal && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/30 backdrop-blur-sm p-4"
-          onClick={() => setShowClaimModal(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-sm shadow-[0_8px_32px_rgba(0,0,0,0.12)]" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
-              <h3 className="text-base font-bold text-[#070707]">Claim Your Tokens</h3>
-              <button onClick={() => setShowClaimModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                <X className="w-4 h-4 text-[#6B7280]" />
-              </button>
-            </div>
-            <div className="p-6 space-y-5">
-              <p className="text-sm text-[#6B7280]">Claim your ERC-1155 ownership tokens to your wallet. This is an on-chain transaction.</p>
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2 text-xs">
-                <div className="flex justify-between"><span className="text-[#9CA3AF]">Tokens</span><span className="font-bold text-[#070707]">65 ERC-1155</span></div>
-                <div className="flex justify-between"><span className="text-[#9CA3AF]">To</span><span className="font-mono text-[#070707]">{walletAddr}</span></div>
-                <div className="flex justify-between"><span className="text-[#9CA3AF]">Network Fee</span><span className="font-mono text-[#6B7280]">~0.0001 ETH</span></div>
-              </div>
-              <button onClick={() => { setClaimed(true); setShowClaimModal(false); }}
-                className="w-full py-3 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-sm font-bold transition-colors">
-                Confirm Claim
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Anchor Details Modal */}
       {showAnchorDetails && (

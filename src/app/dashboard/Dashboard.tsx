@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FileUp, BadgeCheck, Link2, Coins, Wallet, ArrowRight, Inbox, Loader2, Zap } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Card } from '@/components/ui/Card';
@@ -27,16 +27,17 @@ interface NextStepConfig {
 }
 
 const NEXT_STEP_CONFIG: Record<string, NextStepConfig> = {
-  submitted:  { label: '待审核',   sublabel: 'Pending Review',        variant: 'gray',   isUserAction: false },
-  validated:  { label: '待上链',   sublabel: 'Action Required',       variant: 'orange', isUserAction: true  },
-  packaged:   { label: '待上链',   sublabel: 'Action Required',       variant: 'orange', isUserAction: true  },
-  anchored:   { label: '待资产化', sublabel: 'Pending Assetification', variant: 'blue',   isUserAction: false },
-  assetified: { label: '待发布',   sublabel: 'Pending Publish',       variant: 'blue',   isUserAction: false },
+  submitted:  { label: '待审核',   sublabel: 'Pending Validate',      variant: 'gray',   isUserAction: false },
+  validated:  { label: '待上链',   sublabel: 'Anchor On-Chain',       variant: 'orange', isUserAction: true  },
+  packaged:   { label: '待上链',   sublabel: 'Anchor On-Chain',       variant: 'orange', isUserAction: true  },
+  anchored:   { label: '待发布',   sublabel: 'Pending Publish',        variant: 'blue',   isUserAction: false },
+  assetified: { label: '待发布',   sublabel: 'Pending Publish',        variant: 'blue',   isUserAction: false },
   published:  { label: '已完成',   sublabel: 'Published',             variant: 'green',  isUserAction: false },
 };
 
 export default function Dashboard() {
-  const { isLoggedIn } = useApp();
+  const { isLoggedIn, setSubmission } = useApp();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<SubmissionStats | null>(null);
   const [records, setRecords] = useState<SubmissionRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -146,7 +147,21 @@ export default function Dashboard() {
                 const cfg = getStatusConfig(record.current_status);
                 const stepIdx = STEP_INDEX[(record.current_status || 'submitted').toLowerCase()] ?? 0;
                 return (
-                  <Link key={record.submission_id} to="/lineage">
+                  <div key={record.submission_id} className="cursor-pointer" onClick={() => {
+                    setSubmission({
+                      id: record.submission_id,
+                      foodName: record.frontier_name || 'Food Science',
+                      foodWeight: '',
+                      cookingMethod: '',
+                      calories: '',
+                      foodImageName: '',
+                      foodImageUrl: '',
+                      submittedAt: record.create_time ? new Date(record.create_time * 1000).toISOString() : new Date().toISOString(),
+                      taskId: record.task_id,
+                      templateId: record.template_id,
+                    });
+                    navigate('/lineage');
+                  }}>
                     <Card hover className="p-6 group">
                       <div className="flex items-center justify-between gap-4">
                         {/* Left: icon + info */}
@@ -203,7 +218,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                     </Card>
-                  </Link>
+                  </div>
                 );
               })}
             </div>

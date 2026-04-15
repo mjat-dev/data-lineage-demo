@@ -228,7 +228,7 @@ export async function submitTask(params: {
 
 export interface ChainSignatureResponse {
   cf_id: string;
-  validatorDidId: number;
+  validatorDidId: string;
   status: string; // e.g. "ADOPT"
   result: number; // grade, e.g. 5 = S
   signature: string;
