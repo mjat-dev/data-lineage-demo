@@ -315,7 +315,7 @@ function _CirculationLog() {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function DataLineage() {
-  const { submission, setSubmission, anchored, setAnchored, walletAddress, isLoggedIn, setShowLoginModal } = useApp();
+  const { submission, anchored, setAnchored, walletAddress, isLoggedIn, setShowLoginModal } = useApp();
   // Has records only if user has actually submitted something this session
   const hasRecords = !!submission;
   const [showAnchorModal, setShowAnchorModal] = useState(false);
