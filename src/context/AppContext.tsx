@@ -67,7 +67,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (hasToken()) {
       getUserInfo().then(info => {
         setUserInfo(info);
-        const account = info.accounts_data.find(a => a.current_account);
+        const account = info.accounts_data.find(a => a.current_account) ?? info.accounts_data[0];
         if (account) {
           setWalletAddress(account.account);
           setWalletType(account.wallet_name);
@@ -100,10 +100,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const info = await getUserInfo();
       setUserInfo(info);
-      const account = info.accounts_data.find(a => a.current_account);
+      const account = info.accounts_data.find(a => a.current_account) ?? info.accounts_data[0];
       if (account) {
         setWalletAddress(account.account);
         setWalletType(account.wallet_name);
+      } else {
+        setWalletAddress(_res.user_id);
       }
       setShowLoginModal(false);
     } catch (e) {
