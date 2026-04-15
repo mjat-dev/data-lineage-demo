@@ -90,6 +90,21 @@ export default function TaskPage() {
         status: result.status || 'submitted',
       });
 
+      // Save for chain-test page debugging
+      sessionStorage.setItem('codatta_last_submission', JSON.stringify({
+        submission_id: result.submission_id,
+        task_id: taskId,
+        template_id: templateId,
+        food_image: uploadedImageUrl,
+        food_name: foodName.trim(),
+        food_weight: foodWeight.trim(),
+        cooking_method: cookingMethod.trim(),
+        calories: calories.trim(),
+        frontier_id: sessionStorage.getItem('codatta_frontier_id') || '',
+        submitted_at: new Date().toISOString(),
+        api_result: result,
+      }));
+
       navigate('/profile');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Submission failed. Please try again.');

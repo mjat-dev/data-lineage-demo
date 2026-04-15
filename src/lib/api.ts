@@ -224,6 +224,26 @@ export async function submitTask(params: {
   );
 }
 
+// ── Chain Signature (获取上链签名信息) ────────────────────────────────────────
+
+export interface ChainSignatureResponse {
+  cf_id: string;
+  validatorDidId: number;
+  status: string; // e.g. "ADOPT"
+  result: number; // grade, e.g. 5 = S
+  signature: string;
+}
+
+export async function getChainSignature(params: {
+  submissionId: string;
+  userDid: string;
+}): Promise<ChainSignatureResponse> {
+  return request<ChainSignatureResponse>('POST', '/api/v2/submission/chain/signature', {
+    submission_id: params.submissionId,
+    user_did: params.userDid,
+  });
+}
+
 // ── File Upload ───────────────────────────────────────────────────────────────
 
 export async function uploadFile(file: File): Promise<string> {
@@ -255,6 +275,8 @@ export async function submitChainData(params: {
   status: number; // 1 进行中, 2 已完成, 3 失败
   address: string;
   txHash: string;
+  cfId: string;
+  userDid: string;
   chainId?: string;
   blockNumber?: string;
   fingerprint?: string;
@@ -264,6 +286,8 @@ export async function submitChainData(params: {
     status: params.status,
     address: params.address,
     tx_hash: params.txHash,
+    cf_id: params.cfId,
+    user_did: params.userDid,
     chain_id: params.chainId ?? '',
     block_number: params.blockNumber ?? '',
     fingerprint: params.fingerprint ?? '',

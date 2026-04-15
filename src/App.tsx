@@ -8,6 +8,7 @@ import Dashboard from '@/app/dashboard/Dashboard';
 import DataLineage from '@/app/lineage/DataLineage';
 import Marketplace from '@/app/marketplace/Marketplace';
 import TaskPage from '@/app/task/TaskPage';
+import ChainTestPage from '@/app/chain-test/ChainTestPage';
 import 'codatta-connect/dist/codatta-connect.css';
 import './styles/codatta-connect-overrides.css';
 
@@ -24,6 +25,7 @@ export default function App() {
               <Route path="/lineage" element={<DataLineage />} />
               <Route path="/marketplace" element={<Marketplace />} />
               <Route path="/task" element={<TaskPage />} />
+              <Route path="/chain-test" element={<ChainTestPage />} />
             </Routes>
           </div>
         </BrowserRouter>

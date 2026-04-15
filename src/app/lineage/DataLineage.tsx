@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FileText, CheckCircle2, Link2, Package, Globe,
@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatDate } from '@/lib/utils';
+import { getSubmissionList } from '@/lib/api';
 
 
 // ── Hover Popover ─────────────────────────────────────────────────────────────
@@ -248,8 +249,39 @@ function _CirculationLog() {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function DataLineage() {
-  const { submission, anchored, setAnchored, walletAddress } = useApp();
+  const { submission, setSubmission, anchored, setAnchored, walletAddress, isLoggedIn, userInfo } = useApp();
+  const [loading, setLoading] = useState(false);
   const [showAnchorModal, setShowAnchorModal] = useState(false);
+  const [anchorResult, setAnchorResult] = useState<{ txHash: string; cfId: string; blockNumber: number } | null>(null);
+
+  // Fetch latest submission from API if not already in context
+  useEffect(() => {
+    if (submission || !isLoggedIn) return;
+    setLoading(true);
+    getSubmissionList({ pageNum: 1, pageSize: 1 })
+      .then(({ list }) => {
+        if (list.length > 0) {
+          const r = list[0];
+          const data = r.data_submission?.data || {};
+          setSubmission({
+            id: r.submission_id,
+            foodName: (data.food_name as string) || r.frontier_name || '',
+            foodWeight: (data.food_weight as string) || '',
+            cookingMethod: (data.cooking_method as string) || '',
+            calories: (data.calories as string) || '',
+            foodImageName: '',
+            foodImageUrl: (data.food_image as string) || '',
+            submittedAt: r.create_time ? new Date(r.create_time).toISOString() : '',
+            taskId: r.task_id,
+            templateId: r.template_id,
+            status: r.current_status || r.status,
+          });
+          if (r.chain_status === 1) setAnchored(true);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [isLoggedIn, submission, setSubmission, setAnchored]);
   const [showAnchorDetails, setShowAnchorDetails] = useState(false);
   const [showMetadata, setShowMetadata] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
@@ -312,8 +344,16 @@ export default function DataLineage() {
 
 
 
+        {/* Loading state */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-28 text-center">
+            <div className="w-8 h-8 border-3 border-gray-200 border-t-[#FFA800] rounded-full animate-spin mb-4" />
+            <p className="text-sm text-[#9CA3AF]">Loading submission records...</p>
+          </div>
+        )}
+
         {/* Empty state */}
-        {!submission && (
+        {!loading && !submission && (
           <div className="flex flex-col items-center justify-center py-28 text-center">
             <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-5">
               <GitBranch className="w-7 h-7 text-gray-300" />
@@ -384,7 +424,7 @@ export default function DataLineage() {
           <NodeWrapper icon={Link2} iconActive={anchored}>
             <CollapsibleCard
               title="Anchor on-chain"
-              badge={anchored ? 'Anchored · 0xa13f...92bd' : 'Ready to Anchor'}
+              badge={anchored ? `Anchored${anchorResult ? ' · ' + anchorResult.txHash.slice(0, 6) + '...' + anchorResult.txHash.slice(-4) : ''}` : 'Ready to Anchor'}
               badgeVariant={anchored ? 'orange' : 'gray'}
               timestamp="2025-11-21 16:40"
             >
@@ -444,14 +484,14 @@ export default function DataLineage() {
                   <p className="text-sm text-[#070707]">
                     <span className="font-semibold">Codatta Platform</span> anchored your submission on{' '}
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded-lg text-xs font-bold text-[#070707]">
-                      <Globe className="w-3 h-3" /> Base
+                      <Globe className="w-3 h-3" /> BNB Smart Chain
                     </span>
                   </p>
                   <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
                     <p className="text-[10px] font-bold uppercase text-[#9CA3AF] tracking-wider mb-2">Contribution Fingerprint (CF)</p>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-[#070707] truncate flex-1">0x12ab34cd56ef7890aa11bb22cc33dd44ee55ff02</span>
-                      <button onClick={() => copyToClipboard('0x12ab34cd56ef7890aa11bb22cc33dd44ee55ff02', 'cf-node')}
+                      <span className="font-mono text-xs text-[#070707] truncate flex-1">{anchorResult?.cfId || '0x...'}</span>
+                      <button onClick={() => copyToClipboard(anchorResult?.cfId || '', 'cf-node')}
                         className="shrink-0 p-1.5 rounded-lg hover:bg-gray-200 transition-colors">
                         {copied === 'cf-node' ? <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E]" /> : <Copy className="w-3.5 h-3.5 text-[#6B7280]" />}
                       </button>
@@ -703,7 +743,21 @@ export default function DataLineage() {
         </div>}
       </div>
 
-      {showAnchorModal && <AnchorModal onClose={() => setShowAnchorModal(false)} onSuccess={() => setAnchored(true)} />}
+      {showAnchorModal && submission && (
+        <AnchorModal
+          onClose={() => setShowAnchorModal(false)}
+          onSuccess={(result) => {
+            setAnchorResult(result);
+            setAnchored(true);
+          }}
+          submissionId={submission.id}
+          walletAddress={walletAddress || ''}
+          userDid={userInfo?.user_data?.did || ''}
+          foodImageUrl={submission.foodImageUrl}
+          frontierId={sessionStorage.getItem('codatta_frontier_id') || ''}
+          contributorDidId={userInfo?.user_data ? Number(userInfo.user_data.user_id) || 0 : 0}
+        />
+      )}
       {showMetadata && <MetadataDrawer onClose={() => setShowMetadata(false)} />}
 
       {/* Claim Modal */}
@@ -748,8 +802,8 @@ export default function DataLineage() {
               <div>
                 <p className="text-[10px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-2">Contribution Fingerprint (CF)</p>
                 <div className="flex items-start gap-2">
-                  <span className="font-mono text-xs text-[#070707] break-all leading-relaxed flex-1">0x12ab34cd56ef7890aa11bb22cc33dd44ee55ff02</span>
-                  <button onClick={() => copyToClipboard('0x12ab34cd56ef7890aa11bb22cc33dd44ee55ff02', 'cf')}
+                  <span className="font-mono text-xs text-[#070707] break-all leading-relaxed flex-1">{anchorResult?.cfId || '—'}</span>
+                  <button onClick={() => copyToClipboard(anchorResult?.cfId || '', 'cf')}
                     className="shrink-0 p-1.5 rounded-lg hover:bg-gray-100 transition-colors mt-0.5">
                     {copied === 'cf' ? <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E]" /> : <Copy className="w-3.5 h-3.5 text-[#6B7280]" />}
                   </button>
@@ -757,23 +811,27 @@ export default function DataLineage() {
               </div>
               <div>
                 <p className="text-[10px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-1">Chain</p>
-                <p className="text-sm font-bold text-[#070707]">Base</p>
+                <p className="text-sm font-bold text-[#070707]">BNB Smart Chain</p>
               </div>
               <div>
-                <p className="text-[10px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-1">Anchor time</p>
-                <p className="text-sm font-bold text-[#070707]">2025-11-21 16:40</p>
+                <p className="text-[10px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-1">Block</p>
+                <p className="text-sm font-bold text-[#070707]">{anchorResult?.blockNumber?.toLocaleString() || '—'}</p>
               </div>
               <div>
                 <p className="text-[10px] uppercase text-[#9CA3AF] font-bold tracking-wider mb-2">Tx hash</p>
                 <div className="flex items-center gap-2">
-                  <a href="https://basescan.org/tx/0xa13f" target="_blank" rel="noopener noreferrer"
-                    className="font-mono text-sm text-[#FFA800] hover:underline flex items-center gap-1">
-                    0xa13f...92bd <ExternalLink className="w-3 h-3" />
-                  </a>
-                  <button onClick={() => copyToClipboard('0xa13f92bd', 'tx')}
-                    className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                    {copied === 'tx' ? <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E]" /> : <Copy className="w-3.5 h-3.5 text-[#6B7280]" />}
-                  </button>
+                  {anchorResult?.txHash ? (
+                    <a href={`https://bscscan.com/tx/${anchorResult.txHash}`} target="_blank" rel="noopener noreferrer"
+                      className="font-mono text-sm text-[#FFA800] hover:underline flex items-center gap-1">
+                      {anchorResult.txHash.slice(0, 6)}...{anchorResult.txHash.slice(-4)} <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ) : <span className="text-sm text-[#9CA3AF]">—</span>}
+                  {anchorResult?.txHash && (
+                    <button onClick={() => copyToClipboard(anchorResult.txHash, 'tx')}
+                      className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                      {copied === 'tx' ? <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E]" /> : <Copy className="w-3.5 h-3.5 text-[#6B7280]" />}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
