@@ -4,7 +4,7 @@ import { ArrowLeft, CloudUpload, X, CheckCircle2, AlertCircle, Eye, Trash2 } fro
 import { Input, Button as AntButton, ConfigProvider, Spin, message } from 'antd';
 import { useApp } from '@/context/AppContext';
 import { Card } from '@/components/ui/Card';
-import { uploadFile, submitTask } from '@/lib/api';
+import { truncateAddress } from '@/lib/utils';
 import WalletModal from '@/components/WalletModal';
 
 export default function TaskPage() {
@@ -26,20 +26,14 @@ export default function TaskPage() {
 
   const previewUrl = useMemo(() => foodImage ? URL.createObjectURL(foodImage) : null, [foodImage]);
 
-  // Upload image immediately on selection
-  const handleImageSelect = useCallback(async (file: File) => {
+  // Demo mode: use local object URL directly, no real upload
+  const handleImageSelect = useCallback((file: File) => {
     setFoodImage(file);
-    setUploadedImageUrl(null);
     setImageUploading(true);
-    try {
-      const url = await uploadFile(file);
-      setUploadedImageUrl(url);
-    } catch (err) {
-      message.error(err instanceof Error ? err.message : 'Image upload failed');
-      setFoodImage(null);
-    } finally {
+    setTimeout(() => {
+      setUploadedImageUrl(URL.createObjectURL(file));
       setImageUploading(false);
-    }
+    }, 800);
   }, []);
 
   const handleRemoveImage = useCallback(() => {
@@ -59,25 +53,15 @@ export default function TaskPage() {
 
   const formFilled = !!(uploadedImageUrl && foodName.trim() && foodWeight.trim() && cookingMethod.trim() && calories.trim());
 
-  const doSubmit = async () => {
+  // Demo mode: mock submission, no real API call
+  const doSubmit = () => {
     if (!uploadedImageUrl) return;
     setSubmitting(true);
     setError(null);
-    try {
-      const result = await submitTask({
-        taskId,
-        templateId,
-        data: {
-          food_name: foodName.trim(),
-          food_weight: foodWeight.trim(),
-          cooking_method: cookingMethod.trim(),
-          calories: calories.trim(),
-          food_image: uploadedImageUrl,
-        },
-      });
-
+    setTimeout(() => {
+      const mockId = `SUB-${Math.floor(10000 + Math.random() * 90000)}-${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`;
       setSubmission({
-        id: result.submission_id,
+        id: mockId,
         foodName: foodName.trim(),
         foodWeight: foodWeight.trim(),
         cookingMethod: cookingMethod.trim(),
@@ -87,29 +71,10 @@ export default function TaskPage() {
         submittedAt: new Date().toISOString(),
         taskId,
         templateId,
-        status: result.status || 'submitted',
+        status: 'submitted',
       });
-
-      // Save for chain-test page debugging
-      sessionStorage.setItem('codatta_last_submission', JSON.stringify({
-        submission_id: result.submission_id,
-        task_id: taskId,
-        template_id: templateId,
-        food_image: uploadedImageUrl,
-        food_name: foodName.trim(),
-        food_weight: foodWeight.trim(),
-        cooking_method: cookingMethod.trim(),
-        calories: calories.trim(),
-        frontier_id: sessionStorage.getItem('codatta_frontier_id') || '',
-        submitted_at: new Date().toISOString(),
-        api_result: result,
-      }));
-
       navigate('/profile');
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Submission failed. Please try again.');
-      setSubmitting(false);
-    }
+    }, 1200);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -140,16 +105,6 @@ export default function TaskPage() {
           <div className="w-[52px]" />
         </header>
 
-        {/* Wallet required notice */}
-        {!isLoggedIn && (
-          <div className="mb-6 flex items-start gap-3 p-4 rounded-2xl bg-[rgba(255,168,0,0.06)] border border-[rgba(255,168,0,0.20)]">
-            <AlertCircle className="w-5 h-5 text-[#FFA800] shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-[#070707] mb-0.5">Wallet connection required</p>
-              <p className="text-xs text-[#6B7280]">Connect your wallet via the top-right button before submitting.</p>
-            </div>
-          </div>
-        )}
 
         {/* Guidelines */}
         <Card className="mb-8 space-y-6">
@@ -255,14 +210,6 @@ export default function TaskPage() {
             </ol>
           </Card>
 
-          {/* Wallet status */}
-          {isLoggedIn && walletAddress && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-[rgba(34,197,94,0.06)] border border-[rgba(34,197,94,0.15)] text-xs">
-              <CheckCircle2 className="w-4 h-4 text-[#22C55E]" />
-              <span className="text-[#6B7280]">Wallet connected:</span>
-              <span className="font-mono text-[#070707]">{walletAddress}</span>
-            </div>
-          )}
 
           {/* Error */}
           {error && (

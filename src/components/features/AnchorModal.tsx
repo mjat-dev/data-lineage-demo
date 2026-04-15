@@ -49,14 +49,16 @@ export default function AnchorModal({ onClose, onSuccess }: AnchorModalProps) {
               <span className="text-[#9CA3AF]">Gas Fee</span>
               <div className="flex items-center gap-2">
                 <span className="text-[#9CA3AF] line-through text-xs font-mono">~0.0002 ETH</span>
-                <span className="text-[#5DDD22] font-bold">0 XNY</span>
+                <span className="text-[#5DDD22] font-bold">450 XNY</span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 px-1 mb-5">
-            <Sparkles className="w-3.5 h-3.5 text-[#FDA829]" />
-            <p className="text-[11px] text-[#9CA3AF]">Gas fee sponsored by platform · paid in XNY</p>
+          <div className="flex items-start gap-2 px-1 mb-5">
+            <Sparkles className="w-3.5 h-3.5 text-[#FDA829] shrink-0 mt-0.5" />
+            <p className="text-[11px] text-[#9CA3AF] leading-relaxed">
+              Powered by <span className="font-semibold text-[#FDA829]">x402</span> — gas fees are covered by Codatta's paymaster and settled in XNY, enabling gasless on-chain anchoring for contributors.
+            </p>
           </div>
 
           <div className="flex gap-3">

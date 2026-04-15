@@ -9,79 +9,68 @@ import { Button } from '@/components/ui/Button';
 const PIPELINE = ['submitted', 'validated', 'anchored', 'assetified', 'published'] as const;
 
 const STEP_INDEX: Record<string, number> = {
-  submitted: 0,
-  validated: 1,
-  packaged:  1, // legacy alias
-  anchored:  2,
+  submitted:  0,
+  validated:  1,
+  packaged:   1,
+  anchored:   2,
   assetified: 3,
-  published: 4,
+  published:  4,
 };
 
 interface NextStepConfig {
   label: string;
   sublabel: string;
   variant: 'orange' | 'blue' | 'gray' | 'green';
-  isUserAction: boolean; // true = user must do something (highlighted)
+  isUserAction: boolean;
 }
 
 const NEXT_STEP_CONFIG: Record<string, NextStepConfig> = {
-  submitted:  { label: '待审核',   sublabel: 'Pending Validate',      variant: 'gray',   isUserAction: false },
-  validated:  { label: '待上链',   sublabel: 'Anchor On-Chain',       variant: 'orange', isUserAction: true  },
-  packaged:   { label: '待上链',   sublabel: 'Anchor On-Chain',       variant: 'orange', isUserAction: true  },
-  anchored:   { label: '待发布',   sublabel: 'Pending Publish',        variant: 'blue',   isUserAction: false },
-  assetified: { label: '待发布',   sublabel: 'Pending Publish',        variant: 'blue',   isUserAction: false },
-  published:  { label: '已完成',   sublabel: 'Published',             variant: 'green',  isUserAction: false },
+  submitted:  { label: 'Pending Review',  sublabel: 'Pending Validate',  variant: 'gray',   isUserAction: false },
+  validated:  { label: 'Pending Anchor',  sublabel: 'Anchor On-Chain',   variant: 'orange', isUserAction: true  },
+  packaged:   { label: 'Pending Anchor',  sublabel: 'Anchor On-Chain',   variant: 'orange', isUserAction: true  },
+  anchored:   { label: 'Pending Publish', sublabel: 'Pending Publish',   variant: 'blue',   isUserAction: false },
+  assetified: { label: 'Pending Publish', sublabel: 'Pending Publish',   variant: 'blue',   isUserAction: false },
+  published:  { label: 'Completed',       sublabel: 'Published',         variant: 'green',  isUserAction: false },
 };
 
-// ── Mock demo data ────────────────────────────────────────────────────────────
-const MOCK_STATS = {
-  all_count: 3,
-  total_submissions: 2,
-  on_chained: 1,
-  total_rewards: [{ reward_amount: '450', reward_type: 'XNY' }],
-  claimable_rewards: [],
-};
-
-const MOCK_RECORDS = [
-  { submission_id: 'SUB-88242-K', frontier_name: 'Mushroom Image Set', current_status: 'validated',  create_time: 1732110720, task_id: 'TASK-001', template_id: 'MVP_DEMO_TPL', task_type_name: 'Image Annotation', reward_show_name: '150 XNY', foodName: 'Mushroom Image Set' },
-  { submission_id: 'SUB-71834-M', frontier_name: 'Cherry Tomato Set',  current_status: 'submitted',  create_time: 1731924900, task_id: 'TASK-001', template_id: 'MVP_DEMO_TPL', task_type_name: 'Image Annotation', reward_show_name: '150 XNY', foodName: 'Cherry Tomato Set'  },
-  { submission_id: 'SUB-65210-R', frontier_name: 'Avocado Collection', current_status: 'published',  create_time: 1731660300, task_id: 'TASK-001', template_id: 'MVP_DEMO_TPL', task_type_name: 'Image Annotation', reward_show_name: '150 XNY', foodName: 'Avocado Collection' },
-];
+const FRONTIER_NAME = 'Food Science';
+const TASK_NAME = 'Food Image Annotation';
 
 export default function Dashboard() {
-  const { isLoggedIn, setSubmission } = useApp();
+  const { isLoggedIn, submission, setSubmission, setShowLoginModal } = useApp();
   const navigate = useNavigate();
 
-  const stats = isLoggedIn ? MOCK_STATS : null;
-  const records = isLoggedIn ? MOCK_RECORDS : [];
+  // ── Login gate ────────────────────────────────────────────────────────────
+  if (!isLoggedIn) {
+    return (
+      <main className="pt-24 pb-20 bg-[#F5F5F5] min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-sm mx-auto px-8">
+          <div className="w-16 h-16 rounded-2xl bg-[rgba(255,168,0,0.08)] flex items-center justify-center mx-auto mb-5">
+            <Wallet className="w-7 h-7 text-[#FFA800]" />
+          </div>
+          <h2 className="text-xl font-bold text-[#070707] mb-2">Connect Wallet</h2>
+          <p className="text-sm text-[#9CA3AF] leading-relaxed mb-6">
+            Connect your wallet to view your contributions, rewards, and submission history.
+          </p>
+          <button
+            onClick={() => setShowLoginModal(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#2E2E2E] hover:bg-[#070707] text-white text-sm font-semibold rounded-xl transition-colors"
+          >
+            <span className="w-2 h-2 rounded-full bg-[#FDA829] inline-block" />
+            Connect Wallet
+          </button>
+        </div>
+      </main>
+    );
+  }
 
-  const totalRewardStr = stats?.total_rewards?.map(r => `${r.reward_amount} ${r.reward_type}`).join(', ') || '—';
-
+  // ── Derive stats from real submission ─────────────────────────────────────
+  const count = submission ? 1 : 0;
   const statCards = [
-    {
-      label: 'Total Submissions',
-      value: stats ? String(stats.all_count) : '—',
-      icon: FileUp,
-      delta: stats ? `${stats.total_submissions} qualified` : 'Connect wallet to view',
-    },
-    {
-      label: 'Validated',
-      value: stats ? String(stats.total_submissions) : '—',
-      icon: BadgeCheck,
-      delta: stats ? `${stats.all_count - stats.total_submissions} pending` : '—',
-    },
-    {
-      label: 'Anchored On-chain',
-      value: stats ? String(stats.on_chained) : '—',
-      icon: Link2,
-      delta: stats?.on_chained ? 'Token minted' : 'Pending anchor',
-    },
-    {
-      label: 'Reward',
-      value: stats ? totalRewardStr : '—',
-      icon: Coins,
-      delta: stats?.claimable_rewards?.length ? 'Claimable' : 'No claimable rewards',
-    },
+    { label: 'Total Submissions', value: String(count), icon: FileUp,    delta: count ? '1 qualified' : 'No submissions yet' },
+    { label: 'Validated',         value: '0',           icon: BadgeCheck, delta: count ? '1 pending' : '—' },
+    { label: 'Anchored On-chain', value: '0',           icon: Link2,      delta: 'Pending anchor' },
+    { label: 'Reward',            value: '—',           icon: Coins,      delta: 'No claimable rewards' },
   ];
 
   const getStatusConfig = (rawStatus: string): NextStepConfig => {
@@ -120,106 +109,80 @@ export default function Dashboard() {
             <h2 className="text-lg font-bold text-[#070707]">Recent Submissions</h2>
           </div>
 
-          {!isLoggedIn ? (
-            <Card className="p-12 flex flex-col items-center gap-4 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
-                <Wallet className="w-8 h-8 text-gray-300" />
-              </div>
-              <p className="text-[#9CA3AF] text-sm">Connect your wallet to see submissions.</p>
-            </Card>
-          ) : records.length === 0 ? (
+          {!submission ? (
             <Card className="p-12 flex flex-col items-center gap-4 text-center">
               <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
                 <Inbox className="w-8 h-8 text-gray-300" />
               </div>
               <p className="text-[#9CA3AF] text-sm">No submissions yet.</p>
-              <Button variant="primary" size="md" onClick={() => window.location.href = '/'}>
+              <Button variant="primary" size="md" onClick={() => navigate('/')}>
                 Go to Frontier →
               </Button>
             </Card>
-          ) : (
-            <div className="space-y-3">
-              {records.map((record) => {
-                const cfg = getStatusConfig(record.current_status);
-                const stepIdx = STEP_INDEX[(record.current_status || 'submitted').toLowerCase()] ?? 0;
-                return (
-                  <div key={record.submission_id} className="cursor-pointer" onClick={() => {
-                    setSubmission({
-                      id: record.submission_id,
-                      foodName: record.frontier_name || 'Food Science',
-                      foodWeight: '',
-                      cookingMethod: '',
-                      calories: '',
-                      foodImageName: '',
-                      foodImageUrl: '',
-                      submittedAt: record.create_time ? new Date(record.create_time * 1000).toISOString() : new Date().toISOString(),
-                      taskId: record.task_id,
-                      templateId: record.template_id,
-                      status: record.current_status,
-                    });
-                    navigate('/lineage');
-                  }}>
-                    <Card hover className="p-6 group">
-                      <div className="flex items-center justify-between gap-4">
-                        {/* Left: icon + info */}
-                        <div className="flex items-center gap-4 min-w-0">
-                          <div className="w-10 h-10 rounded-xl bg-[rgba(255,168,0,0.10)] flex items-center justify-center shrink-0">
-                            <FileUp className="w-5 h-5 text-[#FFA800]" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-bold text-sm text-[#070707] truncate">{record.frontier_name || 'Food Science'}</span>
-                              <span className="text-[9px] font-mono text-[#9CA3AF] shrink-0">{record.submission_id.slice(-8)}</span>
-                            </div>
-                            <p className="text-xs text-[#6B7280]">
-                              {record.task_type_name || 'Contribute'} · {record.reward_show_name || '—'}
-                            </p>
-                            <p className="text-[10px] text-[#9CA3AF] mt-0.5 font-mono">
-                              {record.create_time ? new Date(record.create_time * 1000).toLocaleString() : '—'}
-                            </p>
-                          </div>
+          ) : (() => {
+            const cfg = getStatusConfig(submission.status || 'submitted');
+            const stepIdx = STEP_INDEX[(submission.status || 'submitted').toLowerCase()] ?? 0;
+            return (
+              <div
+                className="cursor-pointer"
+                onClick={() => {
+                  setSubmission({ ...submission });
+                  navigate('/lineage');
+                }}
+              >
+                <Card hover className="p-6 group">
+                  <div className="flex items-center justify-between gap-4">
+                    {/* Left */}
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-[rgba(255,168,0,0.10)] flex items-center justify-center shrink-0">
+                        <FileUp className="w-5 h-5 text-[#FFA800]" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="font-bold text-sm text-[#070707] truncate">{FRONTIER_NAME}</span>
+                          <span className="text-[9px] font-mono text-[#9CA3AF] shrink-0">{submission.id.slice(-8)}</span>
                         </div>
+                        {submission.foodName && (
+                          <p className="text-sm font-medium text-[#374151] truncate mb-0.5">{submission.foodName}</p>
+                        )}
+                        <p className="text-xs text-[#9CA3AF]">
+                          {TASK_NAME} · Contributor · {new Date(submission.submittedAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
 
-                        {/* Right: progress + next-step badge */}
-                        <div className="flex items-center gap-4 shrink-0">
-                          {/* Mini progress track (5 dots) */}
-                          <div className="hidden md:flex items-center gap-1.5">
-                            {PIPELINE.map((_, i) => (
-                              <div
-                                key={i}
-                                className={`rounded-full transition-all ${
-                                  i < stepIdx
-                                    ? 'w-1.5 h-1.5 bg-[#FFA800]'
-                                    : i === stepIdx
-                                    ? 'w-2 h-2 bg-[#FFA800] ring-2 ring-[rgba(255,168,0,0.25)]'
-                                    : 'w-1.5 h-1.5 bg-gray-200'
-                                }`}
-                              />
-                            ))}
-                          </div>
-
-                          {/* Next step badge */}
-                          <div className="flex items-center gap-1.5">
-                            {cfg.isUserAction && (
-                              <Zap className="w-3 h-3 text-[#FFA800] animate-pulse shrink-0" />
-                            )}
-                            <div className="flex flex-col items-end gap-0.5">
-                              <Badge variant={cfg.variant}>
-                                {cfg.label}
-                              </Badge>
-                              <span className="text-[9px] text-[#9CA3AF] font-mono">{cfg.sublabel}</span>
-                            </div>
-                          </div>
-
-                          <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-[#FFA800] transition-colors" />
+                    {/* Right */}
+                    <div className="flex items-center gap-4 shrink-0">
+                      <div className="hidden md:flex items-center gap-1.5">
+                        {PIPELINE.map((_, i) => (
+                          <div
+                            key={i}
+                            className={`rounded-full transition-all ${
+                              i < stepIdx
+                                ? 'w-1.5 h-1.5 bg-[#FFA800]'
+                                : i === stepIdx
+                                ? 'w-2 h-2 bg-[#FFA800] ring-2 ring-[rgba(255,168,0,0.25)]'
+                                : 'w-1.5 h-1.5 bg-gray-200'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {cfg.isUserAction && (
+                          <Zap className="w-3 h-3 text-[#FFA800] animate-pulse shrink-0" />
+                        )}
+                        <div className="flex flex-col items-end gap-0.5">
+                          <Badge variant={cfg.variant}>{cfg.label}</Badge>
+                          <span className="text-[9px] text-[#9CA3AF] font-mono">{cfg.sublabel}</span>
                         </div>
                       </div>
-                    </Card>
+                      <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-[#FFA800] transition-colors" />
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                </Card>
+              </div>
+            );
+          })()}
         </section>
       </div>
     </main>

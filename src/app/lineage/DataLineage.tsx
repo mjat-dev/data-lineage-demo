@@ -119,65 +119,71 @@ const ASSET_CONTRIBUTORS = [
 function AssetChip({ name, assetId, onViewMore }: { name: string; assetId: string; onViewMore?: () => void }) {
   const preview = ASSET_CONTRIBUTORS.slice(0, 3);
   const popover = (
-    <div className="bg-white rounded-xl p-5 w-80 text-left border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
-      <p className="text-[9px] uppercase font-bold text-[#FFA800] tracking-widest mb-3">Composition Logic</p>
-      <div className="bg-gray-50 rounded-xl p-3 relative border border-gray-100 mb-1.5">
-        <span className="absolute top-2 left-3 text-[9px] text-[#FFA800] font-bold opacity-50">X</span>
-        <div className="flex items-start justify-between pt-3">
-          <div><p className="text-xs font-bold text-[#070707]">Mushroom Image Set</p><p className="text-[10px] text-[#FFA800] font-mono">@chef_kenshiro</p></div>
-          <span className="text-[8px] font-bold bg-gray-100 px-2 py-0.5 rounded text-[#9CA3AF] shrink-0 ml-2">RAW DATA</span>
-        </div>
-      </div>
-      <div className="flex justify-center text-gray-300 my-1"><Plus className="w-4 h-4" /></div>
-      <div className="bg-gray-50 rounded-xl p-3 relative border border-gray-100 mb-1.5">
-        <span className="absolute top-2 left-3 text-[9px] text-[#3474FE] font-bold opacity-50">Y</span>
-        <div className="flex items-start justify-between pt-3">
-          <div><p className="text-xs font-bold text-[#070707]">Grade S Validation</p><p className="text-[10px] text-[#9CA3AF]">By Codatta QA Admin</p></div>
-          <span className="text-[8px] font-bold bg-gray-100 px-2 py-0.5 rounded text-[#9CA3AF] shrink-0 ml-2">VALIDATED</span>
-        </div>
-      </div>
-      <div className="flex justify-center text-gray-300 my-1"><span className="text-sm font-bold">=</span></div>
-      <div className="bg-[rgba(255,168,0,0.06)] rounded-xl p-3 border border-[rgba(255,168,0,0.15)] mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-lg bg-[rgba(255,168,0,0.10)] flex items-center justify-center shrink-0">
-            <Sparkles className="w-4 h-4 text-[#FFA800]" />
-          </div>
-          <div>
-            <p className="text-[8px] uppercase text-[#FFA800]/50 font-bold">Final Asset</p>
-            <p className="text-xs font-bold text-[#070707]">{name}</p>
-            <p className="text-[9px] font-mono text-[#9CA3AF]">{assetId}</p>
+    <div className="bg-white rounded-2xl w-80 text-left border border-gray-100 shadow-[0_8px_24px_rgba(0,0,0,0.12)] overflow-hidden">
+      {/* Scrollable body */}
+      <div className="max-h-[420px] overflow-y-auto p-5 space-y-3">
+        {/* X+Y=Asset formula */}
+        <p className="text-[9px] uppercase font-bold text-[#FFA800] tracking-widest">Composition Logic</p>
+        <div className="bg-gray-50 rounded-xl p-3 relative border border-gray-100">
+          <span className="absolute top-2 left-3 text-[9px] text-[#FFA800] font-bold opacity-50">X</span>
+          <div className="flex items-start justify-between pt-3">
+            <div><p className="text-xs font-bold text-[#070707]">Mushroom Image Set</p><p className="text-[10px] text-[#FFA800] font-mono">@chef_kenshiro</p></div>
+            <span className="text-[8px] font-bold bg-gray-100 px-2 py-0.5 rounded text-[#9CA3AF] shrink-0 ml-2">RAW DATA</span>
           </div>
         </div>
-      </div>
-
-      {/* Contributor ownership summary */}
-      <div className="border-t border-gray-100 pt-3">
-        <p className="text-[9px] uppercase font-bold text-[#9CA3AF] tracking-widest mb-2">
-          Contributors · {ASSET_CONTRIBUTORS.length} total
-        </p>
-        <div className="space-y-0.5 mb-2">
-          {preview.map(({ id, label, percent, color, isYou }) => (
-            <div key={id} className={`flex items-center justify-between px-1.5 py-1 rounded-lg ${isYou ? 'bg-[rgba(253,168,41,0.06)]' : ''}`}>
-              <div className="flex items-center gap-1.5 min-w-0">
-                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
-                <span className={`text-[10px] truncate ${isYou ? 'font-bold text-[#FDA829]' : 'text-[#6B7280]'}`}>{label}</span>
-              </div>
-              <span className={`text-[10px] font-bold ml-2 shrink-0 ${isYou ? 'text-[#FDA829]' : 'text-[#070707]'}`}>{percent}%</span>
+        <div className="flex justify-center text-gray-300"><Plus className="w-4 h-4" /></div>
+        <div className="bg-gray-50 rounded-xl p-3 relative border border-gray-100">
+          <span className="absolute top-2 left-3 text-[9px] text-[#3474FE] font-bold opacity-50">Y</span>
+          <div className="flex items-start justify-between pt-3">
+            <div><p className="text-xs font-bold text-[#070707]">Grade S Validation</p><p className="text-[10px] text-[#9CA3AF]">By Codatta QA Admin</p></div>
+            <span className="text-[8px] font-bold bg-gray-100 px-2 py-0.5 rounded text-[#9CA3AF] shrink-0 ml-2">VALIDATED</span>
+          </div>
+        </div>
+        <div className="flex justify-center text-gray-400 font-bold text-sm">=</div>
+        <div className="bg-[rgba(255,168,0,0.06)] rounded-xl p-3 border border-[rgba(255,168,0,0.15)]">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-lg bg-[rgba(255,168,0,0.10)] flex items-center justify-center shrink-0">
+              <Sparkles className="w-4 h-4 text-[#FFA800]" />
             </div>
-          ))}
+            <div>
+              <p className="text-[8px] uppercase text-[#FFA800]/50 font-bold">Final Asset</p>
+              <p className="text-xs font-bold text-[#070707]">{name}</p>
+              <p className="text-[9px] font-mono text-[#9CA3AF]">{assetId}</p>
+            </div>
+          </div>
         </div>
-        {onViewMore && (
-          <button
-            onClick={onViewMore}
-            className="w-full text-center text-[10px] font-bold text-[#FDA829] hover:text-[#E89B20] pt-2 border-t border-gray-100 flex items-center justify-center gap-1 transition-colors">
-            View All {ASSET_CONTRIBUTORS.length} Contributors <ArrowRight className="w-3 h-3" />
-          </button>
-        )}
+
+        {/* Contributors */}
+        <div className="border-t border-gray-100 pt-3">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[9px] uppercase font-bold text-[#9CA3AF] tracking-widest">
+              Contributors · {ASSET_CONTRIBUTORS.length} total
+            </p>
+            {onViewMore && (
+              <button
+                onClick={onViewMore}
+                className="text-[10px] font-bold text-[#FDA829] hover:text-[#E89B20] flex items-center gap-0.5 transition-colors">
+                view more <ArrowRight className="w-2.5 h-2.5" />
+              </button>
+            )}
+          </div>
+          <div className="space-y-0.5">
+            {preview.map(({ id, label, percent, color, isYou }) => (
+              <div key={id} className={`flex items-center justify-between px-1.5 py-1 rounded-lg ${isYou ? 'bg-[rgba(253,168,41,0.06)]' : ''}`}>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
+                  <span className={`text-[10px] truncate ${isYou ? 'font-bold text-[#FDA829]' : 'text-[#6B7280]'}`}>{label}</span>
+                </div>
+                <span className={`text-[10px] font-bold ml-2 shrink-0 ${isYou ? 'text-[#FDA829]' : 'text-[#070707]'}`}>{percent}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
   return (
-    <HoverPopover content={popover} direction="up" sticky>
+    <HoverPopover content={popover} direction="down" sticky>
       <span className="px-3 py-1 rounded-xl border border-[rgba(255,168,0,0.30)] bg-[rgba(255,168,0,0.08)] text-[#FDA829] text-xs font-bold cursor-pointer hover:bg-[rgba(255,168,0,0.12)] transition-all inline-flex items-center gap-1.5">
         <Package className="w-3 h-3" />{name}
       </span>
@@ -308,9 +314,9 @@ function _CirculationLog() {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function DataLineage() {
-  const { submission, setSubmission, anchored, setAnchored, walletAddress, isLoggedIn } = useApp();
-  // Demo mode: if logged in, user has records (mock data in Dashboard)
-  const hasRecords = isLoggedIn;
+  const { submission, setSubmission, anchored, setAnchored, walletAddress, isLoggedIn, setShowLoginModal } = useApp();
+  // Has records only if user has actually submitted something this session
+  const hasRecords = !!submission;
   const [showAnchorModal, setShowAnchorModal] = useState(false);
   // Mock anchor result — used for display after demo anchoring
   const anchorResult = anchored
@@ -324,6 +330,7 @@ export default function DataLineage() {
   const [ownershipShowAll, setOwnershipShowAll] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const ownershipRef = useRef<HTMLDivElement>(null);
+  const anchorNodeRef = useRef<HTMLDivElement>(null);
 
   const handleViewMoreOwnership = () => {
     setOwnershipOpen(true);
@@ -344,6 +351,32 @@ export default function DataLineage() {
     : '2025-11-20 14:32';
   const walletFull = walletAddress || '0xfdbF0b002bea11E54250993E1298127Ad2CDD089';
   const walletAddr = truncateAddress(walletFull);
+
+  // ── Login gate ────────────────────────────────────────────────────────────
+  if (!isLoggedIn) {
+    return (
+      <main className="pt-24 pb-20 bg-[#F5F5F5] min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-sm mx-auto px-8">
+          <div className="w-16 h-16 rounded-2xl bg-[rgba(255,168,0,0.08)] flex items-center justify-center mx-auto mb-5">
+            <svg className="w-7 h-7 text-[#FFA800]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-[#070707] mb-2">Connect Wallet</h2>
+          <p className="text-sm text-[#9CA3AF] leading-relaxed mb-6">
+            Connect your wallet to view your data lineage and on-chain records.
+          </p>
+          <button
+            onClick={() => setShowLoginModal(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#2E2E2E] hover:bg-[#070707] text-white text-sm font-semibold rounded-xl transition-colors"
+          >
+            <span className="w-2 h-2 rounded-full bg-[#FDA829] inline-block" />
+            Connect Wallet
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="pt-24 pb-20 bg-[#F5F5F5]">
@@ -405,10 +438,10 @@ export default function DataLineage() {
             ) : (
               <>
                 <p className="text-sm text-[#9CA3AF] max-w-xs leading-relaxed">
-                  Submit a data contribution on the Frontier page to start tracking its provenance here.
+                  Upload image data on the Frontier task page to start tracking its lineage here.
                 </p>
-                <Link to="/" className="mt-6 inline-block px-5 py-2.5 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-sm font-bold transition-colors">
-                  Go to Frontier
+                <Link to="/task" className="mt-6 inline-block px-5 py-2.5 bg-[#070707] hover:bg-[#1A1A1A] rounded-xl text-white text-sm font-bold transition-colors">
+                  Go to Task →
                 </Link>
               </>
             )}
@@ -469,6 +502,7 @@ export default function DataLineage() {
           </NodeWrapper>
 
           {/* ── Node 3: Anchor on-chain ─────────────────────────────────── */}
+          <div ref={anchorNodeRef}>
           <NodeWrapper icon={Link2} iconActive={anchored}>
             <CollapsibleCard
               title="Anchor on-chain"
@@ -506,18 +540,22 @@ export default function DataLineage() {
                       ))}
                     </div>
 
-                    <div className="flex items-center justify-between border-t border-gray-200 pt-5">
+                    <div className="border-t border-gray-200 pt-5 space-y-3">
                       <div className="flex items-center gap-2">
                         <Sparkles className="w-3.5 h-3.5 text-[#FDA829]" />
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs text-[#9CA3AF] line-through font-mono">~0.0002 ETH</span>
-                          <span className="text-sm font-bold text-[#5DDD22]">0 XNY</span>
+                          <span className="text-sm font-bold text-[#5DDD22]">450 XNY</span>
                         </div>
                         <span className="text-[10px] text-[#9CA3AF]">Gas sponsored by platform</span>
                       </div>
-                      <Button variant="primary" size="lg" onClick={() => setShowAnchorModal(true)}>
-                        Start Anchoring →
-                      </Button>
+                      <button
+                        onClick={() => setShowAnchorModal(true)}
+                        className="w-full py-3.5 bg-[#FDA829] hover:bg-[#E89B20] active:bg-[#D08A10] text-white font-bold text-base rounded-2xl flex items-center justify-center gap-2 transition-colors shadow-[0_6px_20px_rgba(253,168,41,0.35)]"
+                      >
+                        <Link2 className="w-5 h-5" />
+                        Anchor On-Chain Now →
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -547,6 +585,7 @@ export default function DataLineage() {
               )}
             </CollapsibleCard>
           </NodeWrapper>
+          </div>
 
           {/* ── Node 4: Assetification ──────────────────────────────────── */}
           <NodeWrapper icon={Package} iconActive={anchored}>
@@ -578,6 +617,12 @@ export default function DataLineage() {
                     <p className="text-[10px] text-[#9CA3AF] mt-3 italic">Complete Step 03 to trigger assetification.</p>
                   </div>
 
+                  <button
+                    onClick={() => anchorNodeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    className="mt-2 w-full py-2.5 rounded-xl border border-[rgba(255,168,0,0.35)] text-[#FDA829] text-sm font-bold hover:bg-[rgba(255,168,0,0.06)] transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Link2 className="w-4 h-4" /> Go to Step 03 · Anchor On-Chain →
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -654,12 +699,16 @@ export default function DataLineage() {
               {/* Circulation Log */}
               <Card className="overflow-hidden p-0">
                 <button onClick={() => setCirculationOpen(o => !o)}
-                  className="w-full flex items-center justify-between p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  className="w-full flex items-center justify-between p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors group">
                   <div className="flex items-center gap-3">
                     <History className="w-4 h-4 text-[#FFA800]" />
                     <span className="text-sm font-bold uppercase tracking-wider text-[#070707]">Circulation Log</span>
+                    {anchored && <span className="text-[10px] font-mono text-[#9CA3AF] bg-gray-100 px-2 py-0.5 rounded-full">6 events</span>}
                   </div>
-                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${circulationOpen ? 'rotate-180' : ''}`} />
+                  <div className="flex items-center gap-2 text-[#9CA3AF] group-hover:text-[#FDA829] transition-colors">
+                    <span className="text-[10px]">{circulationOpen ? 'Collapse' : 'Expand'}</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${circulationOpen ? 'rotate-180' : ''}`} />
+                  </div>
                 </button>
                 {circulationOpen && (
                   <div className="p-5">
@@ -681,36 +730,111 @@ export default function DataLineage() {
                     ) : (
                       /* ── Anchored: real mint + transfer records ── */
                       <div className="space-y-8 relative pl-6 border-l border-gray-200">
-                        {[
-                          { id: 'you-mint', time: '2025-11-25 11:30', type: 'Mint', title: 'ERC-1155 tokens minted to You', desc: 'Your 65 ownership tokens minted to your wallet.', from: null, to: '@chef_kenshiro (You)', share: '65 tokens', tx: '0xd94e...7f3a', highlight: true },
-                          { id: 'backer-a', time: '2025-11-27 14:15', type: 'Transfer', title: 'Backer A purchased 10 tokens', desc: 'ERC-1155 token transfer · contributor → backer', from: '@chef_kenshiro · did:codatta:sub_882…9b4c', to: '0x8fa2...bc31', share: '10 tokens', tx: '0xa13f...92bd', highlight: false },
-                          { id: 'backer-b', time: '2025-11-28 09:42', type: 'Transfer', title: 'Backer B purchased 5 tokens', desc: 'ERC-1155 token transfer · contributor → backer', from: '@chef_kenshiro · did:codatta:sub_882…9b4c', to: '0x3dc9...f772', share: '5 tokens', tx: '0x7cc4...1ab9', highlight: false },
-                        ].map((evt) => (
-                          <div key={evt.id} className="relative">
-                            <div className={`absolute -left-[30px] top-1 w-4 h-4 rounded-full border-2 ${evt.highlight ? 'bg-[#FDA829] border-[#FDA829]' : 'bg-white border-gray-300'}`} />
-                            <div className="space-y-2">
+                        {((): Array<{
+                            id: string; time: string; type: string; title: string; desc: string;
+                            fields: Array<{ label: string; value: string; bold?: boolean; link?: string }>;
+                            highlight: boolean;
+                          }> => [
+                          {
+                            id: 'you-mint', time: '2025-11-25 11:30', type: 'Mint',
+                            title: 'ERC-1155 tokens minted to You',
+                            desc: '65 ownership tokens minted to your wallet · contributor share for Food Science dataset.',
+                            fields: [
+                              { label: 'To', value: 'did:codatta:sub_882aef9b4c' },
+                              { label: 'Wallet', value: '0xfdbF...D089' },
+                              { label: 'Share', value: '65 tokens · 28%', bold: true },
+                              { label: 'Tx Hash', value: '0xd94e...7f3a', link: 'https://bscscan.com/tx/0xd94e' },
+                            ],
+                            highlight: true,
+                          },
+                          {
+                            id: 'backer-a', time: '2025-11-27 14:15', type: 'Transfer',
+                            title: 'Backer A purchased 10 tokens',
+                            desc: 'ERC-1155 token transfer · contributor → backer',
+                            fields: [
+                              { label: 'From', value: 'did:codatta:sub_882aef9b4c' },
+                              { label: 'To', value: '0x8fa2...bc31' },
+                              { label: 'Share', value: '10 tokens', bold: true },
+                              { label: 'Tx Hash', value: '0xa13f...92bd', link: 'https://bscscan.com/tx/0xa13f' },
+                            ],
+                            highlight: false,
+                          },
+                          {
+                            id: 'reward-1', time: '2025-12-03 08:11', type: 'Reward',
+                            title: 'Contribution Reward Paid Out',
+                            desc: 'Dataset accessed by AI model · MM-Food-100K v1.0.2 used for fine-tuning by NutriVision Labs.',
+                            fields: [
+                              { label: 'To', value: 'did:codatta:sub_882aef9b4c' },
+                              { label: 'Reason', value: 'Dataset accessed · API' },
+                              { label: 'Your payout', value: '8.4 XNY (28%)', bold: true },
+                              { label: 'Tx Hash', value: '0xb82c...44ef', link: 'https://bscscan.com/tx/0xb82c' },
+                            ],
+                            highlight: false,
+                          },
+                          {
+                            id: 'backer-b', time: '2025-12-05 09:42', type: 'Transfer',
+                            title: 'Backer B purchased 5 tokens',
+                            desc: 'ERC-1155 token transfer · contributor → backer',
+                            fields: [
+                              { label: 'From', value: 'did:codatta:sub_882aef9b4c' },
+                              { label: 'To', value: '0x3dc9...f772' },
+                              { label: 'Share', value: '5 tokens', bold: true },
+                              { label: 'Tx Hash', value: '0x7cc4...1ab9', link: 'https://bscscan.com/tx/0x7cc4' },
+                            ],
+                            highlight: false,
+                          },
+                          {
+                            id: 'reward-2', time: '2025-12-09 14:55', type: 'Reward',
+                            title: 'Contribution Reward Paid Out',
+                            desc: 'Dataset licensed to academic institution · MM-Food-100K v1.0.2 used by OpenDiet Research.',
+                            fields: [
+                              { label: 'To', value: 'did:codatta:sub_882aef9b4c' },
+                              { label: 'Reason', value: 'Dataset licensed · Academic' },
+                              { label: 'Your payout', value: '14 XNY (28%)', bold: true },
+                              { label: 'Tx Hash', value: '0xf391...c2a7', link: 'https://bscscan.com/tx/0xf391' },
+                            ],
+                            highlight: false,
+                          },
+                        ])().map((evt) => {
+                          const dotColor = evt.highlight ? 'bg-[#FDA829] border-[#FDA829]'
+                            : evt.type === 'Royalty' || evt.type === 'Reward' ? 'bg-[#22C55E] border-[#22C55E]'
+                            : 'bg-white border-gray-300';
+                          const cardBg = evt.highlight ? 'bg-[rgba(253,168,41,0.06)] border-[rgba(253,168,41,0.15)]'
+                            : evt.type === 'Royalty' || evt.type === 'Reward' ? 'bg-[rgba(34,197,94,0.04)] border-[rgba(34,197,94,0.12)]'
+                            : 'bg-gray-50 border-gray-100';
+                          const badgeVariant: 'orange'|'blue'|'green'|'gray' =
+                            evt.type === 'Transfer' ? 'blue'
+                            : evt.type === 'Royalty' || evt.type === 'Reward' ? 'green'
+                            : 'orange';
+                          return (
+                          <div key={evt.id} className="relative group">
+                            <div className={`absolute -left-[30px] top-1 w-4 h-4 rounded-full border-2 transition-transform group-hover:scale-110 ${dotColor}`} />
+                            <div className={`space-y-2 p-3 -mx-3 rounded-2xl transition-colors ${evt.highlight ? 'hover:bg-[rgba(253,168,41,0.04)]' : 'hover:bg-gray-50'}`}>
                               <div className="flex items-center gap-2 text-[11px]">
                                 <span className="font-mono text-[#9CA3AF]">{evt.time}</span>
-                                <Badge variant={evt.type === 'Transfer' ? 'blue' : 'orange'}>{evt.type}</Badge>
+                                <Badge variant={badgeVariant}>{evt.type}</Badge>
                               </div>
                               <p className="text-sm font-bold text-[#111827]">{evt.title}</p>
                               <p className="text-xs text-[#9CA3AF]">{evt.desc}</p>
-                              <div className={`p-3 rounded-xl border text-[11px] grid grid-cols-2 md:grid-cols-4 gap-3 ${evt.highlight ? 'bg-[rgba(253,168,41,0.06)] border-[rgba(253,168,41,0.15)]' : 'bg-gray-50 border-gray-100'}`}>
-                                {evt.from && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">From</span><span className="font-bold text-[#6B7280] truncate block">{evt.from}</span></div>}
-                                <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">To</span><span className="font-bold text-[#6B7280] truncate block">{evt.to}</span></div>
-                                <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Share</span><span className="font-bold text-[#111827]">{evt.share}</span></div>
-                                {evt.tx && <div><span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">Tx Hash</span><a href={`https://etherscan.io/tx/${evt.tx}`} target="_blank" rel="noopener noreferrer" className="text-[#3474FE] hover:underline flex items-center gap-1">{evt.tx} <ExternalLink className="w-3 h-3" /></a></div>}
+                              <div className={`p-3 rounded-xl border text-[11px] grid grid-cols-2 md:grid-cols-4 gap-3 ${cardBg}`}>
+                                {evt.fields.map(f => (
+                                  <div key={f.label}>
+                                    <span className="text-[#9CA3AF] uppercase block mb-0.5 text-[9px]">{f.label}</span>
+                                    {f.link ? (
+                                      <a href={f.link} target="_blank" rel="noopener noreferrer"
+                                        className="text-[#FDA829] hover:underline flex items-center gap-1 font-mono font-bold">
+                                        {f.value} <ExternalLink className="w-3 h-3" />
+                                      </a>
+                                    ) : (
+                                      <span className={`truncate block ${f.bold ? 'font-bold text-[#111827]' : 'font-medium text-[#6B7280]'}`}>{f.value}</span>
+                                    )}
+                                  </div>
+                                ))}
                               </div>
-                              {evt.id === 'you-mint' && (
-                                <a href="https://basescan.org/address/0xfdbf" target="_blank" rel="noopener noreferrer"
-                                  className="mt-1 w-full py-2.5 bg-[#FDA829] hover:bg-[#E89B20] active:bg-[#D08A10] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-colors">
-                                  <Coins className="w-4 h-4" />
-                                  Claim My 65 Tokens →
-                                </a>
-                              )}
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>

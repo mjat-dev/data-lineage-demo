@@ -58,10 +58,10 @@ export default function Frontier() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Demo mode: use local mock data, no API call
-    setFrontiers(isLoggedIn ? [DEMO_FRONTIER] : []);
+    // Demo mode: always show frontier, no login required to browse
+    setFrontiers([DEMO_FRONTIER]);
     setLoading(false);
-  }, [isLoggedIn]);
+  }, []);
 
   const handleClick = (f: FrontierItem) => {
     sessionStorage.setItem('codatta_frontier_id', f.frontier_id);
@@ -158,11 +158,6 @@ export default function Frontier() {
                   </div>
                 </div>
 
-                {!isLoggedIn && (
-                  <div className="absolute top-2.5 right-2.5 bg-[#070707] text-white text-[9px] font-bold uppercase px-2 py-0.5 rounded-full">
-                    My Task
-                  </div>
-                )}
               </div>
             ))}
         </div>
